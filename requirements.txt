@@ -1,0 +1,64 @@
+# Requirements for PHISHING-SM Ultimate Python Tool
+# Educational and Authorized Penetration Testing Only
+
+# Core Python Packages
+requests>=2.28.0
+urllib3>=1.26.0
+colorama>=0.4.6
+qrcode>=7.4.0
+pillow>=9.0.0  # For QR code image generation
+pyngrok>=5.0.0  # Alternative tunneling service
+
+# Advanced Features
+python-dotenv>=0.19.0  # Environment variables management
+psutil>=5.9.0  # Process management and system monitoring
+netifaces>=0.11.0  # Network interface detection
+click>=8.0.0  # Command line interface enhancements
+prompt-toolkit>=3.0.0  # Enhanced input handling
+rich>=12.0.0  # Advanced terminal formatting
+
+# Security & Validation
+cryptography>=3.4.0  # For secure operations
+validators>=0.18.0  # URL and email validation
+
+# Web & Server
+flask>=2.0.0  # Alternative web server
+bottle>=0.12.0  # Lightweight web server option
+pyopenssl>=22.0.0  # SSL/TLS support
+
+# System Compatibility
+platformdirs>=2.5.0  # Cross-platform path handling
+distro>=1.8.0  # Linux distribution detection
+
+# Optional Dependencies (Enhanced Features)
+telebot>=4.0.0  # Telegram bot API (alternative implementation)
+python-telegram-bot>=20.0  # Official Telegram bot library
+selenium>=4.0.0  # Browser automation for testing
+beautifulsoup4>=4.11.0  # HTML parsing for page validation
+lxml>=4.9.0  # Fast HTML parsing
+
+# Development & Debugging
+pytest>=7.0.0  # Testing framework
+pytest-cov>=4.0.0  # Test coverage
+black>=22.0.0  # Code formatting
+flake8>=5.0.0  # Code linting
+
+# Platform Specific Dependencies
+# Note: These are optional and system-specific
+
+# For Termux (Android) compatibility:
+# - No additional Python packages needed
+# - System packages required: php, openssh, curl, wget
+
+# For Kali Linux:
+# - No additional Python packages needed  
+# - System packages: php, ssh, curl, wget, tmux
+
+# For Windows (with WSL):
+# - Use WSL2 with Kali/Ubuntu for full functionality
+# - Or install PHP and OpenSSH for Windows
+
+# Installation Notes:
+# 1. Install Python packages: pip install -r requirements.txt
+# 2. Install system dependencies based on your OS
+# 3. For full functionality, ensure PHP, SSH, and curl are available
