@@ -49,7 +49,7 @@ brew install php openssh curl qrencode tmux
 ```bash
 git clone https://github.com/MohamedAbuAl-Saud/PHISHING-SM.git
 cd PHISHING-SM
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 2. Verify Files
