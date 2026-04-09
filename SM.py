@@ -133,7 +133,7 @@ class PhishingTool:
             f"Tool      : PHISHING-SM Cloudflared Edition",
             f"Version   : 2.0",
             f"Coder     : @A_Y_TR",
-            f"Channel   : https://t.me/cybersecurityTemDF",
+            f"Channel   : https://t.me/cybersecurityTemSM",
             f"OS        : {'Termux' if self.is_termux else 'Kali' if self.is_kali else platform.system()}"
         ], Colors.BG_BLUE)
         self.print_warning("The developer is not responsible for any incorrect use of the tool...")
