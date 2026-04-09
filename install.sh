@@ -52,7 +52,7 @@ print_banner() {
     print_color $CYAN "[+] Tool     : PHISHING-SM Cloudflared Edition"
     print_color $CYAN "[+] Version  : 2.0"
     print_color $CYAN "[+] Author   : @A_Y_TR"
-    print_color $CYAN "[+] Channel  : https://t.me/cybersecurityTemDF"
+    print_color $CYAN "[+] Channel  : https://t.me/cybersecurityTemSM"
     print_color "${BLUE}${WHITE}" "════════════════════════════════════════════════════════════════════════"
     print_color $YELLOW "[!] Educational and authorized penetration testing tool only"
     print_color $RED "[!] Developer not responsible for misuse"
