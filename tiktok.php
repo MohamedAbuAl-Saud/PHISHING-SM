@@ -75,15 +75,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 0 10px;
         }
         
-        .profile-logo {
+        /* شعار تيك توك الرسمي */
+        .official-logo {
             width: 100px;
             height: 100px;
-            border-radius: 50%;
             margin: 0 auto 15px;
-            display: block;
-            object-fit: cover;
-            border: 3px solid #ff0050;
-            box-shadow: 0 0 15px rgba(255, 0, 80, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .official-logo svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px rgba(0, 242, 234, 0.5));
         }
         
         .tiktok-text {
@@ -315,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 gap: 20px;
             }
             
-            .profile-logo {
+            .official-logo {
                 width: 90px;
                 height: 90px;
             }
@@ -363,7 +371,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="container">
         <div class="intro-section">
-            <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250825_224438_Google.jpg" alt="صورة الملف الشخصي" class="profile-logo">
+            <!-- الشعار الرسمي SVG لتيك توك -->
+            <div class="official-logo">
+                <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M412.19 118.66a109.27 109.27 0 0 1-9.45-5.5 132.87 132.87 0 0 1-24.27-20.62c-18.1-20.71-24.86-41.72-27.35-56.43h.1C349.14 23.9 350 16 350.13 16h-82.44v318.78c0 4.28 0 8.51-.18 12.69 0 .52-.05 1-.08 1.56 0 .23 0 .47-.05.71v.18a70 70 0 0 1-35.22 55.56 68.8 68.8 0 0 1-34.11 9c-38.41 0-69.54-31.32-69.54-70s31.13-70 69.54-70a68.9 68.9 0 0 1 21.41 3.79l.46-48.07c-7.18-.75-14.36-1.13-21.56-1.13-70.17 0-127.11 57.17-127.11 127.42 0 70.25 56.94 127.42 127.11 127.42 70.17 0 127.11-57.17 127.11-127.42V170.64c13.86 9.77 29.64 17.6 46.67 22.79 18.11 5.49 37.11 8.32 56.67 8.32V131.7c-15.77.02-31.13-3.69-45.49-10.04z" fill="#25F4EE"/>
+                    <path d="M350.13 16h-82.44v318.78c0 4.28 0 8.51-.18 12.69 0 .52-.05 1-.08 1.56 0 .23 0 .47-.05.71v.18a70 70 0 0 1-35.22 55.56 68.8 68.8 0 0 1-34.11 9c-38.41 0-69.54-31.32-69.54-70s31.13-70 69.54-70a68.9 68.9 0 0 1 21.41 3.79l.46-48.07c-7.18-.75-14.36-1.13-21.56-1.13-70.17 0-127.11 57.17-127.11 127.42 0 70.25 56.94 127.42 127.11 127.42 70.17 0 127.11-57.17 127.11-127.42V170.64c13.86 9.77 29.64 17.6 46.67 22.79 18.11 5.49 37.11 8.32 56.67 8.32V131.7c-15.77.02-31.13-3.69-45.49-10.04z" fill="#FE2C55"/>
+                </svg>
+            </div>
             <div class="tiktok-text">TikTok</div>
             <div class="tiktok-subtext">ابدأ رحلتك الإبداعية</div>
             <p class="intro-text">انضم إلى الملايين من المبدعين حول العالم وشارك مقاطع الفيديو الخاصة بك</p>
