@@ -323,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="container">
         <div class="intro-section">
-            <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250825_211205_Google.jpg" alt="صورة الملف الشخصي" class="profile-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="شعار فيسبوك" class="profile-logo">
             <div class="facebook-text">facebook</div>
             <h2 class="intro-text">يساعدك Facebook على التواصل مع الأشخاص ومشاركة ما تريد معهم.</h2>
         </div>
